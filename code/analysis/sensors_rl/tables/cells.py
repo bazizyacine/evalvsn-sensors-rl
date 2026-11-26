@@ -29,6 +29,8 @@ FIRES = ('F1', 'F2', 'F3')
 # threshold (the data's column usable), in both editions: the threshold is in
 # the header, never broken from its comparator.
 IMAGES = 'Images \\mbox{$\\geq$ 28~dB}'
+# A row label on two lines, left-aligned, the row's cells centered beside it.
+TWO_LINES = '\\begin{tabular}[c]{@{}l@{}}%s\\\\ %s\\end{tabular}'
 
 
 def setup(lang):

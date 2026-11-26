@@ -144,19 +144,28 @@ def claims(C):
 
     # --------------------------------------------------------- the controls
     def control(arm, traced):
+        """An arm's means over the 60 seeds; for None, the mean of the four
+        configurations learned on the access-only stack, frozen."""
+        if arm is None:
+            return [round2.learned_mean(m) for m in ('psnr', 'm1loss', 'loss', 'usable', 'declared', 'rreq_all', 'rerr')]
         return ([controls.mean(arm, m) for m in ('psnr', 'm1loss', 'loss', 'usable', 'declared')]
                 + [controls.mean(traced or arm, m) for m in ('rreq_all', 'rerr')])
 
     rows('revision-controles', 'tableau des contrôles, GOP 9-3 : PSNR, perte M1, perte, images ≥ 28 dB, déclarations, RREQ, RERR ; '
-         'sans agent, figée, croisement, ε constant, ε décroissant, rupture seule',
+         'sans agent, figée, croisement, ε constant (accès seul compris), configurations apprises puis figées (moyenne des '
+         'quatre, 240 simulations), ε décroissant, rupture seule',
          [(head, text, control(arm, traced)) for head, arm, traced, text in (
              ('sans agent & Règles', 'rules', None, '27,29 & 14,6 & 56,2 & 5,9 & 22,0 & 2 334 & 67'),
              ('\\midrule \\multirow[m]{2}{*}{figée} & Agents', 'agents-frozen', None, '27,52 & 12,6 & 56,1 & 5,9 & 21,2 & 2 306 & 67'),
              ('& Hybride', 'hybrid-frozen', None, '27,37 & 14,4 & 55,9 & 5,9 & 22,4 & 2 387 & 82'),
              ('\\midrule exploration seule (\\nu = 0) & Hybride', round2.EXPLORE, None, '27,70 & 12,6 & 56,3 & 6,1 & 22,2 & 2 322 & 80'),
              ('\\midrule apprentissage seul (\\varepsilon = 0) & Hybride', round2.LEARN, None, '28,98 & 10,5 & 49,4 & 7,2 & 8,5 & 1 136 & 55'),
-             ('\\midrule \\multirow[m]{2}{*}{\\varepsilon constant} & Agents', 'agents', 'agents-tr', '27,24 & 15,5 & 51,1 & 6,0 & 19,9 & 2 195 & 174'),
+             ('\\midrule \\multirow[m]{3}{*}{\\varepsilon constant} & Accès seul', ablation.ACCESS_ONLY, None,
+              '29,29 & 9,5 & 44,9 & 8,0 & 7,4 & 1 024 & 61'),
+             ('& Agents', 'agents', 'agents-tr', '27,24 & 15,5 & 51,1 & 6,0 & 19,9 & 2 195 & 174'),
              ('& Hybride', 'hybrid', 'hybrid-tr', '29,31 & 9,7 & 46,0 & 7,8 & 7,3 & 1 034 & 61'),
+             ('\\midrule \\begin{tabular}[c]{@{}l@{}}apprises, puis figées\\\\ (4 configurations)\\end{tabular} & Accès seul', None, None,
+              '29,50 & 9,4 & 42,6 & 8,1 & 4,5 & 732 & 64'),
              ('\\midrule \\multirow[m]{2}{*}{\\varepsilon décroissant} & Agents', 'agents-edec', None, '28,78 & 11,0 & 49,8 & 7,3 & 9,3 & 1 172 & 95'),
              ('& Hybride', 'hybrid-edec', None, '28,98 & 10,0 & 49,1 & 7,4 & 8,3 & 1 115 & 58'),
              ('\\midrule \\varepsilon = 0, rupture seule & Agents', 'agents-bgreedy', None, '29,45 & 9,3 & 43,4 & 7,9 & 4,3 & 783 & 63'),

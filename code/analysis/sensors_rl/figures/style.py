@@ -59,7 +59,7 @@ T = {
            'mframes': 'frames M', 'dframes': 'frames D', 'always': '$\\rho \\leq 3$ toujours admis',
            'ref': 'codée,\nsans perte réseau',
            # the stacks' short names, those of the tables
-           'stack': {'aomdv': 'AOMDV', 'rules': 'Règles', 'agents': 'Agents', 'hybrid': 'Hybride'},
+           'stack': {'aomdv': 'AOMDV', 'rules': 'Règles', 'access': 'Accès seul', 'agents': 'Agents', 'hybrid': 'Hybride'},
            'md': 'GOP (M-D)', 'm1loss': 'perte du niveau M1 (%)'},
     'en': {'psnr': 'PSNR at the sink (dB)',
            'floor': '28 dB threshold',
@@ -71,7 +71,7 @@ T = {
            'admitted': 'admitted, IC$_0$ = 0.2', 'other': 'limit for IC$_0$ = 0.1, 0.3 or 0.5',
            'mframes': 'M frames', 'dframes': 'D frames', 'always': '$\\rho \\leq 3$ always admitted',
            'ref': 'coded,\nno network loss',
-           'stack': {'aomdv': 'AOMDV', 'rules': 'Rules', 'agents': 'Agents', 'hybrid': 'Hybrid'},
+           'stack': {'aomdv': 'AOMDV', 'rules': 'Rules', 'access': 'Access only', 'agents': 'Agents', 'hybrid': 'Hybrid'},
            'md': 'GOP (M-D)', 'm1loss': 'M1 level loss (%)'},
 }
 

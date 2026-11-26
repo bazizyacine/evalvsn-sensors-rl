@@ -34,7 +34,7 @@ those of E2 and E3. The comparisons the README names that fit no family of
 the families table are printed apart, with their raw p only (OUTSIDE)."""
 from ..common import data, stats
 from ..tables.plan import FAMILIES
-from . import ablation, quality
+from . import ablation, controls, quality
 
 SPLITS = data.SPLITS
 SECONDARY = (('m1loss', 'M1 loss (points)'), ('loss', 'loss (points)'), ('usable', 'images >= 28 dB'),
@@ -100,12 +100,26 @@ CONFIGURATIONS = (1, 2, 3, 4)
 LEARNED_ARM = {'rules': ablation.ACCESS_ONLY, 'hybrid': 'hybrid'}
 
 
+def learned_arms(stack):
+    """{k: the arm of configuration k, learned on a stack, frozen}."""
+    return {k: '%s-cfg%d-s11' % (LEARNED_ARM[stack], k) for k in CONFIGURATIONS}
+
+
+def learned_mean(metric, stack='rules'):
+    """The mean at GOP 9-3 of the four configurations learned on a stack,
+    frozen, over their 60 seeds each (240 simulations, the row of the
+    controls table): the mean of the four means; None while a replay lacks
+    some of the 60 seeds in round2.tsv."""
+    means = [controls.mean(a, metric) for a in learned_arms(stack).values()]
+    return None if None in means else stats.mean(means)
+
+
 def learned_csma(stack, reference, metric='psnr'):
     """{k: Estimate of configuration k frozen on its stack minus the
     reference ('agent' or 'standard')}, GOP 9-3, Holm over the four
     configurations: one family per stack and reference, as the README fixes
     it; None while a replay lacks some of the 60 seeds in round2.tsv."""
-    arms = {k: '%s-cfg%d-s11' % (LEARNED_ARM[stack], k) for k in CONFIGURATIONS}
+    arms = learned_arms(stack)
     if any(len(values(a, metric)) < data.SEEDS for a in arms.values()):
         return None
     return _tests([(k, a, REFERENCES[stack][reference], '9M3D') for k, a in arms.items()], metric)

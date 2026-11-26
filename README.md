@@ -2,7 +2,7 @@
 
 Supporting material for the article *Reinforcement Learning Agents in a Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor Networks* (M. Y. Baziz, L. Sekhri
 and B. Kechar), in the second round of review at *Sensors* (MDPI). This
-release, v2.1.1, is the version of the manuscript revised for that round:
+release, v2.1.2, is the version of the manuscript revised for that round:
 the code that ran the simulations, the results of every simulation and the
 commands that reproduce them.
 
@@ -416,7 +416,7 @@ sums:
 | 8, PSNR at the sink, mean ± half-width of the 95% confidence interval | `sensors_rl/tables/comparative.py` | `report --only comparative` |
 | 9, Ablations at GOP 9-3: agent minus its rule, means over 60 seeds, with the 95% confidence interval in brackets; link-break detection in the hybrid stack: agents stack minus hybrid stack, with the p of its E0 family (Table 7) | `sensors_rl/tables/ablation.py` | `report --only ablation` |
 | 10, Agent decisions at GOP 9-3, means per simulation | `sensors_rl/tables/controls.py` |  |
-| 11, Controls at GOP 9-3, means over 60 seeds | `sensors_rl/tables/controls.py` | `report --only controls` |
+| 11, Controls at GOP 9-3, means over 60 seeds; learned, then frozen: mean of the four configurations (240 simulations) | `sensors_rl/tables/controls.py` | `report --only controls` |
 | 12, Paired PSNR differences by cell, with the 95% confidence interval in brackets and, for E0, the corrected p (Table 7); the access-only stack is tested by GOP (Section 3.3) | `sensors_rl/tables/comparative.py` | `report --only comparative` |
 | 13, Images that meet the PSNR threshold, delay, missed deadlines and packets received in time, means over 60 seeds | `sensors_rl/tables/quality.py` | `report --only quality` |
 | 14, Repeated-measures analysis of the PSNR, 540 simulations over 60 seeds, with the 95% confidence interval in brackets; dash: between-seed term, to which the correction does not apply | `sensors_rl/tables/comparative.py` | `report --only comparative` |
@@ -437,8 +437,8 @@ sums:
 | 4, Cross-layer stack extended from AOMDV, named AOMDV Quality Prioritized Video (AOMDV_QPV) | a drawing (TikZ or UML), not part of this release |
 | 5, Unified Modeling Language (UML) class diagram of the agents | a drawing (TikZ or UML), not part of this release |
 | 6, Learning trajectories of the agents at GOP 9-3 | `sensors_rl/figures/results.py` |
-| 7, PSNR at the sink for the four stacks of E0, by GOP and fire | `sensors_rl/figures/results.py` |
-| 8, Loss of the M1 level for the four stacks of E0, by GOP and fire | `sensors_rl/figures/results.py` |
+| 7, PSNR at the sink for the four stacks of E0 and the access-only stack (E2), by GOP and fire | `sensors_rl/figures/results.py` |
+| 8, Loss of the M1 level for the four stacks of E0 and the access-only stack (E2), by GOP and fire | `sensors_rl/figures/results.py` |
 | 9, Image 8 of the first simulation under F1 at GOP 9-3 | `sensors_rl/figures/results.py` |
 
 `python3 -m sensors_rl claims` recomputes every other number the text
@@ -472,7 +472,7 @@ The licenses go by directory:
 
 ## Citation
 
-This release, v2.1.1, is archived at Zenodo. All its versions share the
+This release, v2.1.2, is archived at Zenodo. All its versions share the
 concept DOI [10.5281/zenodo.24147853](https://doi.org/10.5281/zenodo.24147853), which
 leads to the latest one; the Zenodo record of each version gives the DOI of
 that version.

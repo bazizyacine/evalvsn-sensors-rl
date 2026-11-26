@@ -341,10 +341,13 @@ def claims(C):
           [(max(e.mean for e in leads) < min(e.mean for e in eqd.values()), '=', True, 0),
            (max(e.hi for e in leads) < min(e.lo for e in eqd.values()) and len(leads) == 18, '=', True, 0)])
     terms = {t[0]: t for t in comparative.anova(rs)}
-    claim('ANOVA de E0 : feu, pile × feu, p ≥ 0,05 ; η² partiel du GOP au-dessus de celui de la pile (discussion, conclusions)',
-          'aucun effet statistiquement significatif du feu n\'a été détecté, ni sur le PSNR ni sur l\'écart entre les piles inter-couches … '
+    claim('ANOVA de E0 : ses piles, les trois piles inter-couches ; feu, pile × feu, p ≥ 0,05 ; η² partiel du GOP au-dessus de celui de '
+          'la pile (discussion, conclusions)',
+          'Dans l\'analyse à mesures répétées, qui porte sur les trois piles inter-couches de l\'étude principale … '
+          'aucun effet statistiquement significatif du feu n\'a été détecté, ni sur le PSNR ni sur l\'écart entre ces piles … '
           'la qualité dépend davantage du GOP que du choix entre les trois piles inter-couches',
-          [(bool(terms['fire'][4] >= 0.05 and terms['stack x fire'][7] >= 0.05), '=', True, 0),
+          [(sorted({r['stack'] for r in rs if r['stack'] != 'aomdv'}) == sorted(CROSS), '=', True, 0),
+           (bool(terms['fire'][4] >= 0.05 and terms['stack x fire'][7] >= 0.05), '=', True, 0),
            (bool(terms['split'][5] > terms['stack'][5]), '=', True, 0)])
     # the PSNR of the stacks of the PSNR table in each cell
     arms = {'aomdv': lambda s: 'pq', 'tuned': lambda s: 'pq-tuned', 'rules': lambda s: 'rules', 'access': round2.access_only,

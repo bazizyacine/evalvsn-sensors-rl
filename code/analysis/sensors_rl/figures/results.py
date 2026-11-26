@@ -1,10 +1,13 @@
 """The figures of the results: the agents' learning trajectories
-(agent-trace.tsv), the PSNR and the M1 loss of the four stacks of the main
-study per fire and GOP (comparative.tsv), and the gallery of a frame decoded
-at the sink by each stack (data/sensors-rl/article/galerie/, frames.tsv).
-They are drawn as the first round deposited them (decision of 24 November
-2026): the access-only stack and AOMDV with cross-layer timers are in the
-tables.
+(agent-trace.tsv), the PSNR and the M1 loss per fire and GOP of the four
+stacks of the main study (comparative.tsv) and of the access-only stack (the
+rule stack with the channel-access agent alone, experiment E2: study 10 at
+GOP 9-3 in revision.tsv, study 11 at 6-6 and 3-9 in round2.tsv, the same 20
+seeds a cell), and the gallery of a frame decoded at the sink
+by each stack of the main study (data/sensors-rl/article/galerie/,
+frames.tsv). They are drawn as the first round deposited them (decision of
+24 November 2026), the access-only stack added to the PSNR and M1-loss
+figures; AOMDV with cross-layer timers is in the tables.
 
 The trajectories, two panels against the simulated time, means of the 60
 traced simulations at GOP 9-3: (a) the share of node-state pairs whose best action
@@ -25,7 +28,8 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import FuncFormatter
 from PIL import Image
 
-from ..common import data, paths
+from ..analysis import quality, round2
+from ..common import data, paths, stats
 from . import style as sty
 from .style import (BLUE, GREEN, GREY, INK, MUTED, ORANGE, PRINT, PURPLE, SKY, T, VERMIL, below, decimal_axes,
                     fit_width, letter_panels, num, plt, save, top_legend)
@@ -107,7 +111,16 @@ def trajectory_figure(rows):
     return save(fig, 'trajectoires')
 
 
-STACKS = [('aomdv', GREY, 'o'), ('rules', BLUE, 's'), ('agents', ORANGE, '^'), ('hybrid', GREEN, 'v')]
+# stack, colour, mark, line style, in the order of the PSNR table's columns
+# (tables/comparative.py, WORDS) less AOMDV with cross-layer timers. The
+# access-only stack takes the channel-access agent's sky blue, as in the
+# trajectories figure, a filled plus and a dash-dot-dot line: its sky and the
+# agents' orange print nearly the same grey (CIE L* 69.8 and 70.6), and its
+# marks often fall on the hybrid stack's, under which they would vanish, so
+# it is drawn over the other stacks (ZORDER).
+STACKS = [('aomdv', GREY, 'o', '-'), ('rules', BLUE, 's', '-'), ('access', SKY, 'P', (0, (4, 1.2, 1, 1.2, 1, 1.2))),
+          ('agents', ORANGE, '^', '-'), ('hybrid', GREEN, 'v', '-')]
+ZORDER = {'access': 2.1}  # the lines' default is 2
 SPLITS = [('3M9D', '3-9'), ('6M6D', '6-6'), ('9M3D', '9-3')]
 
 
@@ -118,20 +131,36 @@ def comparative():
     return out
 
 
+def cell_mean(c, fire, split, stack, metric):
+    """The mean of a metric over the 20 seeds of a cell: the main study's
+    four stacks from comparative.tsv, the access-only stack from its arm at
+    that GOP (analysis/round2.py, access_only), which must hold the same
+    seeds, as the PSNR table computes it (tables/comparative.py,
+    cell_values); None when the cell is empty."""
+    if stack != 'access':
+        rows = c.get((fire, split, stack))
+        return sum(float(r[metric]) for r in rows) / len(rows) if rows else None
+    v = {k[1]: x for k, x in quality.values(round2.access_only(split), metric, split).items() if k[0] == fire}
+    seeds = {r['realisation'] for r in c.get((fire, split, 'rules'), ())}
+    if set(v) != seeds:
+        sys.exit(f'{round2.access_only(split)}: the seeds of {fire} {split} differ from those of the main study')
+    return stats.mean(v.values()) if v else None
+
+
 def comp_figure(c, metric, ylabel, name, floor=False, ylim=None, yticks=None):
     """One panel per fire, the M-D split on the x axis, one line per stack;
     means only, the tables carry the deviations and the tests."""
     L = T[sty.LANG]
     fig, axes = plt.subplots(1, 3, figsize=(PRINT[name], 2.72), sharey=True)
     for ax, fire in zip(axes, ('F1', 'F2', 'F3')):
-        for st, col, mk in STACKS:
+        for st, col, mk, ls in STACKS:
             xs, ys = [], []
             for k, (sp, _) in enumerate(SPLITS):
-                rows = c.get((fire, sp, st))
-                if rows:
+                m = cell_mean(c, fire, sp, st, metric)
+                if m is not None:
                     xs.append(k)
-                    ys.append(sum(float(r[metric]) for r in rows) / len(rows))
-            ax.plot(xs, ys, color=col, marker=mk, label=L['stack'][st])
+                    ys.append(m)
+            ax.plot(xs, ys, color=col, marker=mk, ls=ls, zorder=ZORDER.get(st, 2), label=L['stack'][st])
         if floor:
             ax.axhline(28, color=VERMIL, lw=1.0, ls='--', label=L['floor'])
         ax.set_xticks(range(len(SPLITS)))
