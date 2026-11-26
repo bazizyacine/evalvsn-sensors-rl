@@ -4,7 +4,7 @@ stacks of the main study (comparative.tsv) and of the access-only stack (the
 rule stack with the channel-access agent alone, experiment E2: study 10 at
 GOP 9-3 in revision.tsv, study 11 at 6-6 and 3-9 in round2.tsv, the same 20
 seeds a cell), and the gallery of a frame decoded at the sink
-by each stack of the main study (data/sensors-rl/article/galerie/,
+by each stack, access-only included (data/sensors-rl/article/galerie/,
 frames.tsv). They are drawn as the first round deposited them (decision of
 24 November 2026), the access-only stack added to the PSNR and M1-loss
 figures; AOMDV with cross-layer timers is in the tables.
@@ -51,12 +51,10 @@ AGENTS = [('path', 'hybrid', INK, 'o', '-'),
 TRAJECTORY = {
     'fr': {'path': 'chemin', 'congestion': 'congestion', 'access': 'accès au canal', 'discard': 'rejet anticipé',
            'break': 'détection de rupture', 'hybrid': 'Hybride', 'agents': 'Agents',
-           'x': '$t$ (s)', 'share': 'hors du choix initial (%)', 'count': 'décisions par nœud',
-           'a': 'couples de nœud et d\u2019état', 'b': 'nœuds qui ont décidé'},
+           'x': '$t$ (s)', 'share': 'hors du choix initial (%)', 'count': 'décisions par nœud'},
     'en': {'path': 'path', 'congestion': 'congestion', 'access': 'channel access', 'discard': 'early discard',
            'break': 'link-break detection', 'hybrid': 'Hybrid', 'agents': 'Agents',
-           'x': '$t$ (s)', 'share': 'away from the initial choice (%)', 'count': 'decisions per node',
-           'a': 'node-state pairs', 'b': 'nodes that decided'},
+           'x': '$t$ (s)', 'share': 'away from the initial choice (%)', 'count': 'decisions per node'},
 }
 
 
@@ -104,7 +102,7 @@ def trajectory_figure(rows):
     b.set_ylabel(L['count'])
     decimal_axes(a, b)
     b.yaxis.set_major_formatter(FuncFormatter(log_tick))
-    letter_panels((a, b), [L['a'], L['b']])
+    letter_panels((a, b))
     leg = top_legend(fig, handles, labels, ncol=2, columnspacing=1.2)
     fit_width(fig, 'trajectoires', lambda: fig.tight_layout(rect=(0, 0, 1, below(fig, leg, 0.01)), pad=0.3,
                                                                   w_pad=1.6))
@@ -149,9 +147,15 @@ def cell_mean(c, fire, split, stack, metric):
 
 def comp_figure(c, metric, ylabel, name, floor=False, ylim=None, yticks=None):
     """One panel per fire, the M-D split on the x axis, one line per stack;
-    means only, the tables carry the deviations and the tests."""
+    means only, the tables carry the deviations and the tests. Two panels a
+    row: (a) F1 and (b) F2, then (c) F3 with the legend of
+    the stacks in the free cell beside it, centred on (c)'s plot; each panel
+    has its y-axis title and its ticks, on the scale the three share."""
     L = T[sty.LANG]
-    fig, axes = plt.subplots(1, 3, figsize=(PRINT[name], 2.72), sharey=True)
+    fig = plt.figure(figsize=(PRINT[name], 4.45))
+    gs = fig.add_gridspec(2, 2)
+    first = fig.add_subplot(gs[0, 0])
+    axes = [first, fig.add_subplot(gs[0, 1], sharey=first), fig.add_subplot(gs[1, 0], sharey=first)]
     for ax, fire in zip(axes, ('F1', 'F2', 'F3')):
         for st, col, mk, ls in STACKS:
             xs, ys = [], []
@@ -171,28 +175,34 @@ def comp_figure(c, metric, ylabel, name, floor=False, ylim=None, yticks=None):
             ax.set_ylim(*ylim)
         if yticks is not None:  # the ticks of the larger drawing, kept at print size
             ax.set_yticks(yticks)
-    axes[0].set_ylabel(ylabel)
-    letter_panels(axes, ['F1', 'F2', 'F3'])
+        ax.set_ylabel(ylabel)
+    letter_panels(axes)
     decimal_axes(*axes)
     for ax in axes:  # after decimal_axes, whose formatter would number the splits
         ax.set_xticks(range(len(SPLITS)))
         ax.set_xticklabels([lab for _, lab in SPLITS])
     h, lab = axes[0].get_legend_handles_labels()
-    leg = top_legend(fig, h, lab, ncol=len(h))
-    fit_width(fig, name, lambda: fig.tight_layout(rect=(0, 0, 1, below(fig, leg, 0.01)), pad=0.3, w_pad=0.8))
+    leg = top_legend(fig, h, lab, loc='center', bbox_to_anchor=(0.75, 0.25))
+
+    def layout():
+        fig.tight_layout(pad=0.3, w_pad=1.4, h_pad=0.8)
+        b, f3 = axes[1].get_position(), axes[2].get_position()
+        leg.set_bbox_to_anchor(((b.x0 + b.x1) / 2, (f3.y0 + f3.y1) / 2), transform=fig.transFigure)
+    fit_width(fig, name, layout)
     return save(fig, name)
 
 
 # The gallery's frame (data/sensors-rl/article/galerie/README.md): image 8 of r01, F1, GOP
-# 9-3, T = 9 s (study 09); the arms of frames.tsv, AOMDV being 'pq'.
+# 9-3, T = 9 s (study 09; the access-only stack, study 10); the arms of
+# frames.tsv, AOMDV being 'pq' and the access-only stack its arm at GOP 9-3.
 GALLERY = {'fire': 'F1', 'period': 'p9', 'realisation': 'r01', 'image': '8'}
-ARM = {'aomdv': 'pq', 'rules': 'rules', 'agents': 'agents', 'hybrid': 'hybrid'}
+ARM = {'aomdv': 'pq', 'rules': 'rules', 'access': round2.access_only('9M3D'), 'agents': 'agents', 'hybrid': 'hybrid'}
 
 
 def gallery_frame():
     """The gallery frame's PSNR at the sink (dB) and the loss of its first
     level (%), per stack, read in frames.tsv; the frame is a main one, so
-    that level is M1."""
+    that level is M1. The caption prints them, checked by claims P19."""
     out = {}
     for r in data.read_tsv('frames.tsv'):
         if all(r[k] == x for k, x in GALLERY.items()):
@@ -204,29 +214,22 @@ def gallery_frame():
 
 
 def gallery_figure():
-    """Frame 8 of the first simulation of F1 at the 9-3 split (study 09),
-    coded without network loss then as the sink decodes it for each stack;
-    under each, the PSNR of that frame and the loss of its M1 level."""
-    L = T[sty.LANG]
-    stacks = [('reference', None), ('aomdv', 'aomdv'), ('rules', 'rules'), ('agents', 'agents'),
-              ('hybrid', 'hybrid')]
-    frame = gallery_frame()
-    fig, axes = plt.subplots(1, len(stacks), figsize=(PRINT['galerie'], 1.80))
-    titles = []
-    for ax, (f, st) in zip(axes, stacks):
+    """Frame 8 of the first simulation of F1 at GOP 9-3, coded without
+    network loss then as the sink decodes it for each stack: six panels, two
+    columns and three rows, in the caption's order; as in Figure 2 of the
+    MDPI template, each panel carries its letter alone, and the caption
+    gives the stack, the PSNR of the frame and the loss of its M1 level."""
+    files = ['reference'] + list(ARM)
+    gallery_frame()  # every stack's frame is in frames.tsv, and a main one
+    fig, axes = plt.subplots(3, 2, figsize=(PRINT['galerie'], 1.2 * PRINT['galerie']))
+    for i, (ax, f) in enumerate(zip(axes.flat, files)):
         img = np.array(Image.open(os.path.join(paths.DATA, 'galerie', f + '.png')).convert('L'))
         ax.imshow(img, cmap='gray', vmin=0, vmax=255)
         ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
         for s in ax.spines.values():
             s.set_visible(False)
-        if st is None:
-            titles.append(L['ref'])
-        else:
-            psnr, m1 = frame[st]
-            titles.append(L['stack'][st] + '\n' + num(psnr) + ' dB, M1 ' + num(m1, 0) + ' %')
-    for i, (ax, t) in enumerate(zip(axes, titles)):
-        ax.set_xlabel(f'({chr(97 + i)}) ' + t, fontsize=8)
-    fit_width(fig, 'galerie', lambda: fig.tight_layout(w_pad=0.5))
+        ax.set_xlabel('($\\mathbf{%s}$)' % chr(97 + i), fontsize=8, labelpad=3)
+    fit_width(fig, 'galerie', lambda: fig.tight_layout(w_pad=0.8, h_pad=0.4), keep_aspect=True)
     return save(fig, 'galerie')
 
 

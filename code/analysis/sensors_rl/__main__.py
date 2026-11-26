@@ -7,11 +7,14 @@ data      sets/ -> data/sensors-rl/article/*.tsv (needs the raw sets); --only NA
           agent-trace, break-agent, break-cases, methods, codec, overhead.
           Every file but round2 reads the sets of studies 09 and 10: once
           one of them is missing (purged) the step refuses to write and
-          the stored file stays; all then skips data. revision.tsv is
-          frozen as the first round deposited it; round2 (study 11) keeps
-          the rows of a set once stored; --sets NAME ... with round2 or
-          overhead reads those sets only and keeps the other rows as
-          stored (overhead: SETS_DIR on an extraction of a light archive)
+          the stored file stays; all then skips data. frames-access
+          rewrites the access-only stack's rows of frames.tsv from study
+          10's results/images.tsv, the other rows kept, sets or not.
+          revision.tsv is frozen as the first round deposited it; round2
+          (study 11) keeps the rows of a set once stored; --sets NAME ...
+          with round2 or overhead reads those sets only and keeps the
+          other rows as stored (overhead: SETS_DIR on an extraction of a
+          light archive)
 tables    data/sensors-rl/article -> the article's tables, {fr,en}_*.tex
 figures   data/sensors-rl/article -> the article's figures, {fr,en}_*.png
 abstract  the graphical abstract -> submission/roundN/, submission-fr/roundN/
@@ -33,7 +36,7 @@ import argparse
 import sys
 
 STEPS = ('data', 'tables', 'figures', 'abstract', 'claims', 'report', 'all')
-DATA = ('comparative', 'revision', 'round2', 'frames', 'oracle', 'agent-trace', 'break-agent', 'break-cases', 'methods',
+DATA = ('comparative', 'revision', 'round2', 'frames', 'frames-access', 'oracle', 'agent-trace', 'break-agent', 'break-cases', 'methods',
         'codec', 'overhead')
 REPORTS = ('comparative', 'quality', 'controls', 'ablation', 'coding', 'robustness', 'overhead', 'plan', 'round2',
            'assumptions', 'access-robustness')
@@ -66,7 +69,8 @@ def data(only, skip_without_sets=False, names=None):
     from .compile import agents, codec, measures, simulations
     steps = {'comparative': simulations.comparative, 'revision': simulations.revision,
              'round2': lambda: simulations.round2(names), 'overhead': lambda: measures.overhead(names),
-             'frames': simulations.frames, 'oracle': simulations.oracle, 'agent-trace': agents.agent_trace,
+             'frames': simulations.frames, 'frames-access': simulations.frames_access,
+             'oracle': simulations.oracle, 'agent-trace': agents.agent_trace,
              'break-agent': agents.break_agent, 'break-cases': agents.break_cases, 'methods': measures.methods,
              'codec': codec.codec}
     missing = missing_sets()
@@ -77,7 +81,7 @@ def data(only, skip_without_sets=False, names=None):
     rc = 0
     for name in ([only] if only else DATA):
         # with --sets, overhead reads the sets named only: the others keep their rows
-        if missing and name not in ('revision', 'round2') and not (name == 'overhead' and names):
+        if missing and name not in ('revision', 'round2', 'frames-access') and not (name == 'overhead' and names):
             print('data --only %s: refused, %d sets of studies 09 and 10 are not on disk (%s%s): data/sensors-rl/article keeps its stored file'
                   % (name, len(missing), missing[0], ', ...' if len(missing) > 1 else ''), file=sys.stderr)
             rc = 1

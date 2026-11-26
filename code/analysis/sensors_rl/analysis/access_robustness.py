@@ -26,7 +26,7 @@ Every function that tests gives None while an arm it needs lacks some of the
 60 seeds, as round2.learned_csma does; complete() says whether every arm of
 every series holds them, and the report of this module (report --only
 access-robustness) lists what is missing otherwise. The article takes these
-results since 24 November 2026 (IN_ARTICLE; section 3.8): the equal-rate and
+results since 24 November 2026 (IN_ARTICLE; sections 3.7 and 3.8): the equal-rate and
 coefficient tables (tables/coding.py), the load, fire and scenario tables
 (tables/robustness.py), the plan and families tables (tables/plan.py) and the
 tests of the assumptions (analysis/assumptions.py) hold them, and
@@ -38,7 +38,7 @@ from ..common import data, paths, stats
 from . import ablation, coding, quality, robustness
 
 # The one switch of the article: True since the campaign is over and the text
-# gives these results (section 3.8). It puts the 57 sets of T7 in the plan
+# gives these results (sections 3.7 and 3.8). It puts the 57 sets of T7 in the plan
 # (tables/plan.py), their families in the families table and their tests in
 # the checks of the assumptions (analysis/assumptions.py). It does not stand
 # on partial data: active() stops.

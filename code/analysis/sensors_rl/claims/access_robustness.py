@@ -1,5 +1,5 @@
 """S14: the access-only stack in the series of E4 and E5 (tranche T7 of study
-11) as the text gives it, in section 3.8, in the
+11) as the text gives it, in sections 3.7 and 3.8, in the
 limits (4.4), in the introduction and in the conclusions, each number
 recomputed by analysis/access_robustness.py:
 
@@ -87,10 +87,12 @@ def claims(C):
          '2,62 dB, p < 0,001', both, '1,38 à 2,03 dB, p < 0,001', '0,82 à 2,62 dB',
          also=[((len(a['fire']), len(a['scenario']), len(SCENARIO)) == (7, 5, 4), '=', True, 0)])
     claim('S14', name + ' à débit égal, Holm sur deux : GOP 6-6, GOP 3-9',
-          'À débit égal, elle est de 2,00 dB [1,47 ; 2,54] au GOP 6-6 (p < 0,001) et de 0,97 dB [0,30 ; 1,63] au GOP 3-9 (p = 0,005',
+          'À débit égal, la pile à accès seul dépasse la pile à règles de 2,00 dB [1,47 ; 2,54] au GOP 6-6 (p < 0,001) et de 0,97 dB '
+          '[0,30 ; 1,63] au GOP 3-9 (p = 0,005',
           gap_checks(a['rate']['6M6D'], '2,00 dB [1,47 ; 2,54] au GOP 6-6 (p < 0,001')
           + gap_checks(a['rate']['3M9D'], '0,97 dB [0,30 ; 1,63] au GOP 3-9 (p = 0,005'))
-    gap(name + ' au coefficient 0,1, GOP 9-3, test unique', 'Au coefficient 0,1, elle est de 1,31 dB [0,84 ; 1,77] (p < 0,001, test unique',
+    gap(name + ' au coefficient 0,1, GOP 9-3, test unique',
+        'À ce coefficient, la pile à accès seul dépasse la pile à règles de 1,31 dB [0,84 ; 1,77] (p < 0,001, test unique',
         a['coding']['q01'], '1,31 dB [0,84 ; 1,77] (p < 0,001')
     span(name + ' à 18 et 30 s, Holm sur cinq périodes : écarts ; p de chacun ; bornes min. et max. (dB)',
          'À 18 et 30 s, aucune différence statistiquement significative n\'a été détectée entre ces deux piles (−0,12 et −0,01 dB, '

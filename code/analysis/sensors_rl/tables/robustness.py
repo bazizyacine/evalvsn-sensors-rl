@@ -7,9 +7,11 @@ per-seed gaps, each PSNR gap with its 95 % interval in brackets
 of its series and its comparison (the five periods, the seven variants of the
 fire, the five variants of the scenario), the single test's for a reference
 row. The access-only stack (tranche T7 of study 11) has its mean PSNR beside
-the others; its gaps, with their interval and their p, are in the text
-(analysis/access_robustness.py). A cell the 60 seeds do not all back prints
-as a dash."""
+the others and its gap over the rule stack first among the gaps
+(analysis/access_robustness.py): Holm's within its series; on the reference
+row, the period of 9 s, which the T7 protocol tests in the load series and
+its family alone. Its gap with the hybrid stack is in the text. A cell the
+60 seeds do not all back prints as a dash."""
 from ..analysis import access_robustness as ar
 from ..analysis import robustness as rb
 from ..common import data
@@ -35,31 +37,47 @@ def estimate_or_none(e):
     return e if e is not None and e.n == data.SEEDS else None
 
 
+def access_gaps(series, keys):
+    """[Estimate] of the access-only stack minus the rule stack at the levels
+    keys of a series (None: the reference scenario, the period of 9 s of the
+    load series and its family), Holm within the family of the series; None
+    for a level the 60 seeds do not all back."""
+    fam, load = ar.tests(series, 'access - rules') or {}, ar.tests('load', 'access - rules') or {}
+    return [estimate_or_none(load.get(ar.REFERENCE.key) if k is None else fam.get(k)) for k in keys]
+
+
 # ---------------------------------------------------------------- load
 
 LOAD_ROWS = (('p7', '7'), ('p9', '9'), ('p12', '12'), ('p18', '18'), ('p30', '30'))
-LOAD_GROUPS = {'fr': ('PSNR (dB)', 'Hybride $-$ Règles'), 'en': ('PSNR (dB)', 'Hybrid $-$ Rules')}
-LOAD_COLUMNS = {'fr': ('$T$ (s)', 'Perte (\\%)', 'AOMDV', 'Règles', 'Accès seul', 'Agents', 'Hybride', 'PSNR (dB)', '$p$', cells.IMAGES),
-                'en': ('$T$ (s)', 'Loss (\\%)', 'AOMDV', 'Rules', 'Access only', 'Agents', 'Hybrid', 'PSNR (dB)', '$p$', cells.IMAGES)}
+LOAD_GROUPS = {'fr': ('PSNR (dB)', 'Accès seul $-$ Règles', 'Hybride $-$ Règles'),
+               'en': ('PSNR (dB)', 'Access only $-$ Rules', 'Hybrid $-$ Rules')}
+LOAD_COLUMNS = {'fr': ('$T$ (s)', 'Perte (\\%)', 'AOMDV', 'Règles', 'Accès seul', 'Agents', 'Hybride')
+                + ('PSNR (dB)', '$p$', 'PSNR (dB)', '$p$', cells.IMAGES),
+                'en': ('$T$ (s)', 'Loss (\\%)', 'AOMDV', 'Rules', 'Access only', 'Agents', 'Hybrid')
+                + ('PSNR (dB)', '$p$', 'PSNR (dB)', '$p$', cells.IMAGES)}
+# 8 pt since the access-only stack's gap joined the hybrid stack's, each gap
+# and its interval on one line
 LOAD_SEP = '3pt'
-LOAD_COLS = cells.xcols(('0.50', '0.78', '0.92', '0.80', '0.76', '0.90', '0.98', '2.20', '0.94', '1.22'), fill=True)
+LOAD_COLS = cells.xcols(('0.52', '0.74', '0.98', '0.74', '0.74', '0.77', '0.90', '2.08', '0.80', '2.08', '0.80', '0.85'), fill=True)
 
 
 def write_load(lang, res):
-    g1, g2 = LOAD_GROUPS[lang]
-    out = [HEAD, cells.setup(lang), '\\small', '\\setlength{\\tabcolsep}{%s}' % LOAD_SEP,
+    g1, g2, g3 = LOAD_GROUPS[lang]
+    out = [HEAD, cells.setup(lang), '\\footnotesize', '\\setlength{\\tabcolsep}{%s}' % LOAD_SEP,
            '\\begin{tabularx}{\\linewidth}{%s}' % LOAD_COLS, '\\toprule',
-           ' & \\textbf{%s} & \\multicolumn{5}{c}{\\textbf{%s}} & \\multicolumn{3}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2),
-           '\\cmidrule(lr){2-2}\\cmidrule(lr){3-7}\\cmidrule(lr){8-10}',
+           ' & \\textbf{%s} & \\multicolumn{5}{c}{\\textbf{%s}} & \\multicolumn{2}{c}{\\textbf{%s}}'
+           ' & \\multicolumn{3}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2, g3),
+           '\\cmidrule(lr){2-2}\\cmidrule(lr){3-7}\\cmidrule(lr){8-9}\\cmidrule(lr){10-12}',
            ' & '.join('\\textbf{%s}' % x for x in LOAD_COLUMNS[lang]) + ' \\\\', '\\midrule']
     psnr = [estimate_or_none(res['psnr'][p]) for p, _ in LOAD_ROWS]
+    access = access_gaps('load', [p for p, _ in LOAD_ROWS])
     body = []
-    for (p, t), e, gap in zip(LOAD_ROWS, psnr, cells.intervals(psnr, 2, lang)):
+    for (p, t), a, a_gap, e, gap in zip(LOAD_ROWS, access, cells.intervals(access, 2, lang), psnr, cells.intervals(psnr, 2, lang)):
         images = estimate_or_none(res['images'][p])
         row = [t, plain(res['loss'][p], 1, lang)]
         row += [plain(access_mean('load', p) if s == 'access' else res['means'][p][s], 2, lang) for s in FOUR]
-        body.append(row + [gap, pval(e and e.holm, lang), signed(images and images.mean, 1, lang)])
-    body = cells.align_rows(body, lang, (0, 1, 2, 3, 4, 5, 6, 8, 9), pcols=(8,))
+        body.append(row + [a_gap, pval(a and a.holm, lang), gap, pval(e and e.holm, lang), signed(images and images.mean, 1, lang)])
+    body = cells.align_rows(body, lang, (0, 1, 2, 3, 4, 5, 6, 8, 10, 11), pcols=(8, 10))
     for r, after in zip(body, cells.rules(range(len(body)))):
         out += [' & '.join(r) + ' \\\\', after]
     out.append('\\end{tabularx}')
@@ -68,9 +86,12 @@ def write_load(lang, res):
 
 # ---------------------------------------------------------------- fire
 
-# The reference row names its values, AZ = 1 dB/m and PF = 0.5, on a second
-# line of the label, no wider than the longest variant.
-REFERENCE = TWO_LINES % ('%s', '($\\mathrm{AZ} = \\SI{1}{\\deci\\bel\\per\\metre}$, $\\mathrm{PF} = %s$)')
+# The reference row names its values, AZ = 1 dB/m and PF = 0.5, under its
+# label, one per line, and the failures near the front take two lines: no
+# label is wider than the variants of AZ, so that the two gaps hold on one
+# line each.
+THREE_LINES = '\\begin{tabular}[c]{@{}l@{}}%s\\\\ %s\\\\ %s\\end{tabular}'
+REFERENCE = THREE_LINES % ('%s', '($\\mathrm{AZ} = \\SI{1}{\\deci\\bel\\per\\metre}$,', '$\\mathrm{PF} = %s$)')
 FIRE_ROWS = ((None, REFERENCE % ('Référence', '0{,}5'), REFERENCE % ('Reference', '0.5')),
              ('az015', '$\\mathrm{AZ} = \\SI{0,15}{\\deci\\bel\\per\\metre}$', '$\\mathrm{AZ} = \\SI{0.15}{\\deci\\bel\\per\\metre}$'),
              ('az05', '$\\mathrm{AZ} = \\SI{0,5}{\\deci\\bel\\per\\metre}$', '$\\mathrm{AZ} = \\SI{0.5}{\\deci\\bel\\per\\metre}$'),
@@ -78,13 +99,16 @@ FIRE_ROWS = ((None, REFERENCE % ('Référence', '0{,}5'), REFERENCE % ('Referenc
              ('pf0', '$\\mathrm{PF} = 0$', '$\\mathrm{PF} = 0$'),
              ('pf025', '$\\mathrm{PF} = 0{,}25$', '$\\mathrm{PF} = 0.25$'),
              ('pf075', '$\\mathrm{PF} = 0{,}75$', '$\\mathrm{PF} = 0.75$'),
-             ('fd1', 'Pannes près du front\\textsuperscript{1}', 'Failures near the front\\textsuperscript{1}'))
-FIRE_GROUPS = {'fr': ('PSNR (dB)', 'Hybride $-$ Règles'), 'en': ('PSNR (dB)', 'Hybrid $-$ Rules')}
-FIRE_COLUMNS = {'fr': ('Variante', 'Perte (\\%)', 'Règles', 'Accès seul', 'Hybride', 'PSNR (dB)', '$p$', 'Perte M1 (points)', cells.IMAGES, 'Décl.'),
-                'en': ('Variant', 'Loss (\\%)', 'Rules', 'Access only', 'Hybrid', 'PSNR (dB)', '$p$', 'M1 loss (points)', cells.IMAGES, 'Decl.')}
-# 8 pt: the gap and its interval are on one line
+             ('fd1', TWO_LINES % ('Pannes près', 'du front\\textsuperscript{1}'), TWO_LINES % ('Failures near', 'the front\\textsuperscript{1}')))
+FIRE_GROUPS = {'fr': ('PSNR (dB)', 'Accès seul $-$ Règles', 'Hybride $-$ Règles'),
+               'en': ('PSNR (dB)', 'Access only $-$ Rules', 'Hybrid $-$ Rules')}
+FIRE_COLUMNS = {'fr': ('Variante', 'Perte (\\%)', 'Règles', 'Accès seul', 'Hybride', 'PSNR (dB)', '$p$')
+                + ('PSNR (dB)', '$p$', 'Perte M1 (points)', cells.IMAGES, 'Décl.'),
+                'en': ('Variant', 'Loss (\\%)', 'Rules', 'Access only', 'Hybrid', 'PSNR (dB)', '$p$')
+                + ('PSNR (dB)', '$p$', 'M1 loss (points)', cells.IMAGES, 'Decl.')}
+# 8 pt: each gap and its interval are on one line
 FIRE_SEP = '3pt'
-FIRE_COLS = cells.xcols(('0.74', '0.80', '0.78', '0.92', '1.86', '0.86', '1.10', '1.14', '0.80'), 'l', fill=True)
+FIRE_COLS = cells.xcols(('0.76', '0.76', '0.75', '0.93', '1.82', '0.82', '1.82', '0.82', '0.99', '0.88', '0.65'), 'l', fill=True)
 
 
 def fire_estimate(res, v, metric):
@@ -101,23 +125,25 @@ def fire_gain(res, v, metric):
 
 
 def write_fire(lang, res):
-    g1, g2 = FIRE_GROUPS[lang]
+    g1, g2, g3 = FIRE_GROUPS[lang]
     out = [HEAD, cells.setup(lang), '\\footnotesize', '\\setlength{\\tabcolsep}{%s}' % FIRE_SEP,
            '\\begin{tabularx}{\\linewidth}{%s}' % FIRE_COLS, '\\toprule',
-           ' & \\textbf{%s} & \\multicolumn{3}{c}{\\textbf{%s}} & \\multicolumn{5}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2),
-           '\\cmidrule(lr){2-2}\\cmidrule(lr){3-5}\\cmidrule(lr){6-10}',
+           ' & \\textbf{%s} & \\multicolumn{3}{c}{\\textbf{%s}} & \\multicolumn{2}{c}{\\textbf{%s}}'
+           ' & \\multicolumn{5}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2, g3),
+           '\\cmidrule(lr){2-2}\\cmidrule(lr){3-5}\\cmidrule(lr){6-7}\\cmidrule(lr){8-12}',
            ' & '.join('\\textbf{%s}' % h for h in FIRE_COLUMNS[lang]) + ' \\\\', '\\midrule']
     means = res['means']
+    access = access_gaps('fire', [v for v, _, _ in FIRE_ROWS])
     gaps = cells.intervals([fire_estimate(res, v, 'psnr') for v, _, _ in FIRE_ROWS], 2, lang)
     body = []
-    for (v, fr, en), gap in zip(FIRE_ROWS, gaps):
+    for (v, fr, en), a, a_gap, gap in zip(FIRE_ROWS, access, cells.intervals(access, 2, lang), gaps):
         row = [plain(means[rb.arm('rules', v)]['loss'], 1, lang), plain(means[rb.arm('rules', v)]['psnr'], 2, lang),
                plain(access_mean('fire', v), 2, lang), plain(means[rb.arm('hybrid', v)]['psnr'], 2, lang),
-               gap, pval(fire_gain(res, v, 'psnr')[1], lang),
+               a_gap, pval(a and a.holm, lang), gap, pval(fire_gain(res, v, 'psnr')[1], lang),
                signed(fire_gain(res, v, 'm1loss')[0], 1, lang), signed(fire_gain(res, v, 'usable')[0], 1, lang),
                signed(fire_gain(res, v, 'declared')[0], 1, lang)]
         body.append([fr if lang == 'fr' else en] + row)
-    body = cells.align_rows(body, lang, (1, 2, 3, 4, 6, 7, 8, 9), pcols=(6,))
+    body = cells.align_rows(body, lang, (1, 2, 3, 4, 6, 8, 9, 10, 11), pcols=(6, 8))
     for r, after in zip(body, cells.rules(range(len(body)))):
         out += [' & '.join(r) + ' \\\\', after]
     out.append('\\end{tabularx}')
@@ -132,16 +158,20 @@ SCENARIO_ROWS = ((None, 'Référence', 'Reference'),
                  ('j8', 'Grille de \\SI{30}{\\metre}', '\\SI{30}{\\metre} grid'),
                  ('swap', TWO_LINES % ('Caméra et puits', 'échangés'), TWO_LINES % ('Camera and sink', 'swapped')),
                  ('v15', TWO_LINES % ('Vitesse de tête', '$\\times 1{,}5$'), TWO_LINES % ('Head spread rate', '$\\times 1.5$')))
-SCENARIO_GROUPS = {'fr': ('PSNR (dB)', 'Hybride $-$ Règles', 'Agents $-$ Règles'),
-                   'en': ('PSNR (dB)', 'Hybrid $-$ Rules', 'Agents $-$ Rules')}
-SCENARIO_COLUMNS = {'fr': ('Variante', 'Perte (\\%)', 'AOMDV', 'Règles', 'Accès seul', 'Agents', 'Hybride')
+SCENARIO_GROUPS = {'fr': ('PSNR (dB)', 'Accès seul $-$ Règles', 'Hybride $-$ Règles', 'Agents $-$ Règles'),
+                   'en': ('PSNR (dB)', 'Access only $-$ Rules', 'Hybrid $-$ Rules', 'Agents $-$ Rules')}
+SCENARIO_COLUMNS = {'fr': ('Variante', 'Perte (\\%)', 'AOMDV', 'Règles', 'Accès seul', 'Agents', 'Hybride', 'PSNR (dB)', '$p$')
                     + ('PSNR (dB)', '$p$', cells.IMAGES) * 2,
-                    'en': ('Variant', 'Loss (\\%)', 'AOMDV', 'Rules', 'Access only', 'Agents', 'Hybrid')
+                    'en': ('Variant', 'Loss (\\%)', 'AOMDV', 'Rules', 'Access only', 'Agents', 'Hybrid', 'PSNR (dB)', '$p$')
                     + ('PSNR (dB)', '$p$', cells.IMAGES) * 2}
-# Twelve columns after the variant: 8 pt, 2.5 pt between columns, each gap over
-# its interval, hence the two longest variants on two lines.
+# Fourteen columns after the variant, the widest table: 7 pt (at 8 pt, the
+# stacks' names, the gaps and the p alone exceed the page), 2.5 pt between
+# columns, each gap over its interval, hence the two longest variants on two
+# lines.
+SCENARIO_SIZE = '\\scriptsize'
 SCENARIO_SEP = '2.5pt'
-SCENARIO_COLS = cells.xcols(('0.74', '1.00', '0.80', '0.72', '0.88', '0.98', '1.38', '0.90', '1.02', '1.64', '0.92', '1.02'), 'l', fill=True)
+SCENARIO_COLS = cells.xcols(('0.78', '1.07', '0.78', '0.78', '0.82', '0.97', '1.40', '0.85', '1.40', '0.85', '0.92', '1.61', '0.85', '0.92'),
+                            'l', fill=True)
 
 
 def scenario_estimate(res, contrast, v, metric):
@@ -158,14 +188,16 @@ def scenario_gap(res, contrast, v, metric):
 
 
 def write_scenario(lang, res):
-    g1, g2, g3 = SCENARIO_GROUPS[lang]
-    out = [HEAD, cells.setup(lang), '\\footnotesize', '\\setlength{\\tabcolsep}{%s}' % SCENARIO_SEP,
+    g1, g2, g3, g4 = SCENARIO_GROUPS[lang]
+    out = [HEAD, cells.setup(lang), SCENARIO_SIZE, '\\setlength{\\tabcolsep}{%s}' % SCENARIO_SEP,
            '\\begin{tabularx}{\\linewidth}{%s}' % SCENARIO_COLS, '\\toprule',
-           ' & \\textbf{%s} & \\multicolumn{5}{c}{\\textbf{%s}} & \\multicolumn{3}{c}{\\textbf{%s}}'
-           ' & \\multicolumn{3}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2, g3),
-           '\\cmidrule(lr){2-2}\\cmidrule(lr){3-7}\\cmidrule(lr){8-10}\\cmidrule(lr){11-13}',
+           ' & \\textbf{%s} & \\multicolumn{5}{c}{\\textbf{%s}} & \\multicolumn{2}{c}{\\textbf{%s}} & \\multicolumn{3}{c}{\\textbf{%s}}'
+           ' & \\multicolumn{3}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2, g3, g4),
+           '\\cmidrule(lr){2-2}\\cmidrule(lr){3-7}\\cmidrule(lr){8-9}\\cmidrule(lr){10-12}\\cmidrule(lr){13-15}',
            ' & '.join('\\textbf{%s}' % h for h in SCENARIO_COLUMNS[lang]) + ' \\\\', '\\midrule']
     m = res['means']
+    access = access_gaps('scenario', [v for v, _, _ in SCENARIO_ROWS])
+    a_gaps = cells.intervals(access, 2, lang, lines=2)
     contrasts = ('hybrid-rules', 'agents-rules')
     gaps = {c: cells.intervals([scenario_estimate(res, c, v, 'psnr') for v, _, _ in SCENARIO_ROWS], 2, lang, lines=2)
             for c in contrasts}
@@ -173,10 +205,11 @@ def write_scenario(lang, res):
     for i, (v, fr, en) in enumerate(SCENARIO_ROWS):
         row = [fr if lang == 'fr' else en, plain(m[rb.arm('rules', v)]['loss'], 1, lang)]
         row += [plain(access_mean('scenario', v) if s == 'access' else m[rb.arm(s, v)]['psnr'], 2, lang) for s in FOUR]
+        row += [a_gaps[i], pval(access[i] and access[i].holm, lang)]
         for c in contrasts:
             row += [gaps[c][i], pval(scenario_gap(res, c, v, 'psnr')[1], lang), signed(scenario_gap(res, c, v, 'usable')[0], 1, lang)]
         body.append(row)
-    body = cells.align_rows(body, lang, (1, 2, 3, 4, 5, 6, 8, 9, 11, 12), pcols=(8, 11))
+    body = cells.align_rows(body, lang, (1, 2, 3, 4, 5, 6, 8, 10, 11, 13, 14), pcols=(8, 10, 13))
     for r, after in zip(body, cells.rules(range(len(body)))):
         out += [' & '.join(r) + ' \\\\', after]
     out.append('\\end{tabularx}')

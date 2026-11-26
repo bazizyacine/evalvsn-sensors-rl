@@ -211,7 +211,7 @@ TEXT = {
                                                          'scenario': r"vidéo forêt ou fumée, grille de \SI{30}{\metre}, caméra et puits échangés, vitesse de tête~$\times 1{,}5$, 5 variantes (scénario)"}),
         'traces': ('Traces des agents', r"aucun~: simulations de E0, choix et valeurs des agents écrits toutes les \SI{20}{\second}"),
         'costs': ('Coûts pour un nœud capteur', 'aucune simulation, mesures de E0 à E2 et des traces'),
-        'all': 'les quatre', 'none': '--', 'measure': '--',
+        'all': 'les~quatre', 'none': '--', 'measure': '--',
     },
     'en': {
         'head': ('Experiment', 'Question', 'Factor and levels', 'Stacks', 'GOP',
@@ -233,7 +233,7 @@ TEXT = {
                                                     'scenario': r'forest or smoke video, \SI{30}{\metre} grid, camera and sink swapped, head spread rate~$\times 1.5$, 5 variants (scenario)'}),
         'traces': ('Traces of the agents', r'none: simulations of E0, the choices and values of the agents written every \SI{20}{\second}'),
         'costs': ('Costs for a sensor node', 'no simulation, measurements of E0 to E2 and the traces'),
-        'all': 'all four', 'none': '--', 'measure': '--',
+        'all': 'all~four', 'none': '--', 'measure': '--',
     },
 }
 
@@ -330,10 +330,12 @@ def num(n, lang):
 
 
 def stacks_text(st, lang):
+    """The stacks of a series; the access-only stack, the primary comparison,
+    first where it joins the four of E0, these unbroken on the next line."""
     t = TEXT[lang]
     four = {s for s, _, _ in STACKS}
     if st >= four:
-        return ', '.join([t['all']] + ([ACCESS[1 if lang == 'fr' else 2]] if ACCESS[0] in st else []))
+        return ', '.join(([ACCESS[1 if lang == 'fr' else 2]] if ACCESS[0] in st else []) + [t['all']])
     named = STACKS[:2] + (ACCESS,) + STACKS[2:]
     return ', '.join((fr if lang == 'fr' else en) for s, fr, en in named if s in st)
 

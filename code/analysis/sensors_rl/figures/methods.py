@@ -1,6 +1,7 @@
 """The figures of the methods: the scenario, one map per fire
 (fire-map-F1..F3.tsv), and the early discard's admission region. They are
-drawn as the first round deposited them."""
+drawn as the first round deposited them, the maps two a row as in the MDPI
+template."""
 import math
 import os
 
@@ -11,7 +12,7 @@ from matplotlib.patches import Patch, Polygon
 from ..common import paths
 from . import style as sty
 from .style import (BLUE, GREY, INK, MUTED, PAD, PRINT, RULE_CORE, RULE_FILL, T, below, decimal_axes, fit_width,
-                    plt, save, top_legend)
+                    letter, plt, save, top_legend)
 
 def read_map(name):
     meta, rows = {}, []
@@ -57,6 +58,21 @@ def place(ax, name, x, y, zoom, z=5):
     ax.add_artist(ab)
 
 
+def map_scale(mw):
+    """The scale of the pictograms, discs and strokes of a map mw inches wide:
+    1 for the map of the first round's drawing, 0.325 of its 7.14 in less the
+    margins, so that they keep their size relative to the map."""
+    return mw / (0.325 * (7.14 - 2 * PAD))
+
+
+# The layout of the scenario figure, in inches: two maps a
+# row, (a) F1 and (b) F2, then (c) F3 with the legend in the free cell beside
+# it; the gap between the maps, the band of each panel's letter and the gap
+# between the rows. The maps fill the print width.
+MAP_GAP, LETTER_BAND, ROW_GAP = 0.08, 0.22, 0.08
+MAP_W = (PRINT['scenario-carte'] - 2 * PAD - MAP_GAP) / 2
+
+
 def scenario_figure():
     """The three fires of the main study, 90 s after the detection, in the
     illustrated style of a drawn map: the forest as a light ground, the
@@ -64,26 +80,25 @@ def scenario_figure():
     time t, the burnt ellipse and the heated zone ahead of it, the camera, the
     sink, the fire and its wind as pictograms.
 
-    The maps print as large as before the print-size drawing (7.14 in drawn,
-    printed at the PRINT width): the pictograms, discs and strokes are scaled
-    by g, the type is not, so that it prints at 9 pt (panels), 8 pt (wind and
-    legend). The layout is set in inches from the bottom: the legend, a gap,
-    the panel captions, then the maps, whose wind band is just tall enough for
-    its arrow and label."""
+    Two maps a row, each with its letter alone under it, (c) beside the
+    legend; the pictograms, discs and strokes are scaled by
+    g (map_scale), the type is not, so that it prints at 9 pt (letters), 8 pt
+    (wind and legend). Each map's wind band, above it, is just tall enough
+    for its arrow and label."""
     import random
     L = T[sty.LANG]
     t = 150
     W = PRINT['scenario-carte'] - 2 * PAD
-    g = PRINT['scenario-carte'] / 7.14  # the drawn width before, at the same map size on paper
+    mw = MAP_W
+    g = map_scale(mw)
     fires = [('F%d' % k,) + read_map('fire-map-F%d.tsv' % k) for k in (1, 2, 3)]
-    # inches: the legend's height and bottom, the gap under the panel captions,
-    # the captions' band, the maps' height (their width, 0.325 W, sets the
-    # scale: 430 m across, 467 m high with the wind band)
-    lh, lb, gap, cap = 0.655, 0.02, 0.06, 0.22
-    mh = 0.325 * W * 467 / 430
-    H = lb + lh + gap + cap + mh + 0.01
+    # the maps' height: their width spans 430 m, their height 467 m with the wind band
+    mh = mw * 467 / 430
+    H = 2 * (LETTER_BAND + mh) + ROW_GAP + 0.01
     fig = plt.figure(figsize=(W, H))
-    axes = [fig.add_axes((0.005 + k * 0.333, (lb + lh + gap + cap) / H, 0.325, mh / H)) for k in range(3)]
+    cells = [(0, LETTER_BAND + mh + ROW_GAP + LETTER_BAND), (mw + MAP_GAP, LETTER_BAND + mh + ROW_GAP + LETTER_BAND),
+             (0, LETTER_BAND)]
+    axes = [fig.add_axes((x / W, y / H, mw / W, mh / H)) for x, y in cells]
     for k, (ax, (label, meta, rows)) in enumerate(zip(axes, fires)):
         forest = ax.add_patch(plt.Rectangle((-32, -32), 424, 424, facecolor=FOREST, edgecolor='#7fae6a',
                                             lw=1.0 * g, zorder=0))
@@ -124,16 +139,16 @@ def scenario_figure():
         ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
         for sp in ax.spines.values():
             sp.set_visible(False)
-        ax.set_xlabel(f'({chr(97 + k)}) {label}, ' + L['t'] % t, labelpad=4)
-    # The legend, framed under the panels: three columns, each as wide as its
-    # longest label, so that 8 pt type fits the print width; the relays'
-    # four states, the three grounds (burnt area, heated zone, the forest and
-    # its trees, which MDPI asks to explain like every pictogram), the three
-    # pictograms of the camera, the sink and the fire.
-    columns = [[(('disc', S_ALIVE), L['alive']), (('disc', S_ZONE), L['heated']), (('disc', S_EARLY), L['early']),
-                (('disc', S_FRONT), L['front'])],
-               [(('patch', '#f0b8a8'), L['burnt']), (('patch', '#fbe3c4'), L['zone']), (('forest', None), L['forest'])],
-               [(('icon', 'camera'), L['camera']), (('icon', 'sink'), L['sink']), (('icon', 'fire'), L['ignition'])]]
+        ax.set_xlabel(letter(k), labelpad=4)
+    # The legend, framed, in the free cell beside (c) and centred on its map:
+    # one column of three groups, the relays' four states, the three grounds
+    # (burnt area, heated zone, the forest and its trees, which MDPI asks to
+    # explain like every pictogram), the three pictograms of the camera, the
+    # sink and the fire.
+    groups = [[(('disc', S_ALIVE), L['alive']), (('disc', S_ZONE), L['heated']), (('disc', S_EARLY), L['early']),
+               (('disc', S_FRONT), L['front'])],
+              [(('patch', '#f0b8a8'), L['burnt']), (('patch', '#fbe3c4'), L['zone']), (('forest', None), L['forest'])],
+              [(('icon', 'camera'), L['camera']), (('icon', 'sink'), L['sink']), (('icon', 'fire'), L['ignition'])]]
     rnd_ = fig.canvas.get_renderer()
 
     def width(s, fs):
@@ -141,28 +156,29 @@ def scenario_figure():
         w = tx.get_window_extent(rnd_).width / fig.dpi
         tx.remove()
         return w
-    fs, key, gap, margin = 8, 0.24, 0.22, 0.10  # inches: the key and its gap, between columns, inside the frame
-    cols = [max(width(lab, fs) for _, lab in col) + key for col in columns]
-    total = sum(cols) + 2 * gap + 2 * margin
-    lax = fig.add_axes(((W - total) / 2 / W, lb / H, total / W, lh / H))
-    lax.set_xlim(0, total); lax.set_ylim(0, lh)
+    # inches: the key and its gap, the row pitch, the gap between groups, the margin inside the frame
+    fs, key, row, sep, margin = 8, 0.24, 0.155, 0.07, 0.10
+    lw_ = max(width(lab, fs) for grp in groups for _, lab in grp) + key + 2 * margin
+    lh = sum(len(grp) for grp in groups) * row + (len(groups) - 1) * sep + 2 * margin - (row - 0.10)
+    lx, ly = mw + MAP_GAP + (mw - lw_) / 2, LETTER_BAND + (mh - lh) / 2
+    lax = fig.add_axes((lx / W, ly / H, lw_ / W, lh / H))
+    lax.set_xlim(0, lw_); lax.set_ylim(0, lh)
     lax.set_xticks([]); lax.set_yticks([]); lax.grid(False)
     for sp in lax.spines.values():
         sp.set_visible(True); sp.set_edgecolor('#9a9a92'); sp.set_linewidth(0.8)
-    for c, col in enumerate(columns):
-        for r, ((kind, val), label) in enumerate(col):
-            # rows 0.155 in apart from the top; a three-entry column leaves its last row empty
-            cx = margin + sum(cols[:c]) + c * gap
-            cy = lh / 2 + (1.5 - r) * 0.155
-            draw_key(lax, kind, val, cx, cy)
-            lax.text(cx + key, cy, label, va='center', ha='left', fontsize=fs, color=INK)
-    # the maps span 0.991 of W, so the PNG is 0.9 % narrower than it prints
+    cy = lh - margin - 0.05
+    for grp in groups:
+        for (kind, val), label in grp:
+            draw_key(lax, kind, val, margin, cy, g)
+            lax.text(margin + key, cy, label, va='center', ha='left', fontsize=fs, color=INK)
+            cy -= row
+        cy -= sep
+    # the maps span the print width less the margins: the dpi rises only by pdfTeX's rounding
     return save(fig, 'scenario-carte', fill_print=True)
 
 
-def draw_key(lax, kind, val, cx, cy):
+def draw_key(lax, kind, val, cx, cy, g):
     """One key of the scenario legend, left edge at cx, centred on cy (inches)."""
-    g = PRINT['scenario-carte'] / 7.14
     if kind == 'disc':
         lax.plot(cx + 0.07, cy, 'o', ms=7 * g, color=val, markeredgecolor='white')
         place(lax, 'relay', cx + 0.07, cy, 0.018 * g)

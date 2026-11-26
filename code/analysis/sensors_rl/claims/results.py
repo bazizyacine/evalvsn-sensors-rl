@@ -407,14 +407,24 @@ def main():
         g = lambda arm, c: float(f8[arm][c]) if arm in f8 else None
         # the M1 loss and the PSNR the figure illustrates, and why AOMDV's
         # image is an earlier one: none of the packets of image 8 arrived
-        claim('P19', 'frame 8, texte : perte (%) et PSNR (dB) des piles à règles et hybride, aucune perte de M1 ; perte de M1 (%) et PSNR '
-              'de la pile à agents ; AOMDV, tous les paquets perdus',
-              'Avec AOMDV, aucun paquet de cette image n\'arrive au puits … Les piles à règles et hybride en perdent 40 et 36 %, mais aucun du '
-              'niveau M1, et l\'image atteint 33,2 et 32,5 dB. La pile à agents perd 19 % de ce niveau, et l\'image atteint 22,8 dB',
-              [(g('rules', 'loss'), '=', 40, 0), (g('hybrid', 'loss'), '=', 36, 0),
-               (g('rules', 'psnr'), '=', 33.2, 1), (g('hybrid', 'psnr'), '=', 32.5, 1),
-               (g('rules', 'l1loss') == 0 and g('hybrid', 'l1loss') == 0, '=', True, 0), (g('agents', 'l1loss'), '=', 19, 0),
+        access = round2.access_only('9M3D')
+        claim('P19', 'frame 8, texte : perte (%) et PSNR (dB) des piles à règles, à accès seul et hybride, aucune perte de M1 ; perte de M1 '
+              '(%) et PSNR de la pile à agents ; AOMDV, tous les paquets perdus',
+              'Avec AOMDV, aucun paquet de cette image n\'arrive au puits … Les piles à règles, à accès seul et hybride en perdent 40, 39 et '
+              '36 %, mais aucun du niveau M1, et l\'image atteint 33,2, 32,9 et 32,5 dB. La pile à agents perd 19 % de ce niveau, et '
+              'l\'image atteint 22,8 dB',
+              [(g('rules', 'loss'), '=', 40, 0), (g(access, 'loss'), '=', 39, 0), (g('hybrid', 'loss'), '=', 36, 0),
+               (g('rules', 'psnr'), '=', 33.2, 1), (g(access, 'psnr'), '=', 32.9, 1), (g('hybrid', 'psnr'), '=', 32.5, 1),
+               (g('rules', 'l1loss') == 0 and g(access, 'l1loss') == 0 and g('hybrid', 'l1loss') == 0, '=', True, 0),
+               (g('agents', 'l1loss'), '=', 19, 0),
                (g('agents', 'psnr'), '=', 22.8, 1), (g('pq', 'loss') == 100, '=', True, 0)])
+        # the caption: each decoded panel's PSNR and M1 loss
+        caption = [('AOMDV', 'pq', '17,3', 100), ('pile à règles', 'rules', '33,2', 0), ('pile à accès seul', access, '32,9', 0),
+                   ('pile à agents', 'agents', '22,8', 19), ('pile hybride', 'hybrid', '32,5', 0)]
+        claim('P19', 'frame 8, légende de la figure : PSNR (dB) et perte de M1 (%) de chaque pile',
+              ' … '.join('%s, %s dB, %d %%' % (name, db, m1) for name, _, db, m1 in caption),
+              [c for _, arm, db, m1 in caption
+               for c in ((g(arm, 'psnr'), '=', float(db.replace(',', '.')), 1), (g(arm, 'l1loss'), '=', m1, 0))])
 
     # P21, P23
     dl = quality.gops('hybrid', 'rules', 'delay_mean')
@@ -487,7 +497,7 @@ def main():
           [([s for s in ('rules', 'hybrid') if round2.flagged(sh[s, '6M6D'])] == ['hybrid'], '=', True, 0)])
     eq = coding.equal_rate_gaps()
     claim('P27', 'hybride moins règles à débit égal, GOP 6-6 et 3-9, Holm sur deux',
-          'À débit égal, la pile hybride dépasse encore la pile à règles, de 1,84 dB [1,22 ; 2,45] au GOP 6-6 et de 1,51 dB [0,80 ; 2,22] au '
+          'La pile hybride dépasse aussi la pile à règles, de 1,84 dB [1,22 ; 2,45] au GOP 6-6 et de 1,51 dB [0,80 ; 2,22] au '
           'GOP 3-9 (p < 0,001 pour les deux',
           gap_checks(eq['6M6D'], '1,84 dB [1,22 ; 2,45], p < 0,001') + gap_checks(eq['3M9D'], '1,51 dB [0,80 ; 2,22], p < 0,001'))
 
@@ -500,7 +510,7 @@ def main():
           'Le PSNR gagne %s avec AOMDV et %s avec la pile à règles. Il gagne %s avec la pile à agents et %s avec la pile hybride (p < 0,001 '
           'pour les quatre' % gains,
           [c for (s, label), x in zip(coding.STACKS, gains) for c in gap_checks(test2['%s 0.1 - 0.01' % label], x + ', p < 0,001')])
-    text = 'À ce coefficient, la pile hybride dépasse la pile à règles de 1,71 dB [1,19 ; 2,22] (p < 0,001'
+    text = 'La pile hybride dépasse aussi la pile à règles, de 1,71 dB [1,19 ; 2,22] (p < 0,001'
     claim('P37', 'coefficient 0,1 : hybride moins règles (dB), Holm sur deux', text, gap_checks(test1['hybrid - rules'], text))
     text = '−0,08 dB [−0,67 ; 0,51], p = 0,79'
     claim('P37', 'coefficient 0,1 : agents moins règles (dB), Holm sur deux', text, gap_checks(test1['agents - rules'], text))

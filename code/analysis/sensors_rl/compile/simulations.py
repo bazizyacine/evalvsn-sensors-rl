@@ -321,17 +321,26 @@ def _routing_from_runs(body):
 
 # ---------------------------------------------------------------- frames.tsv
 
+# The access-only stack in frames.tsv: study 10's arm at GOP 9-3
+# (analysis/round2.access_only), at T = 9 s only, its rows after the four
+# stacks' rows of that period (the gallery's panel (d)).
+ACCESS_FRAMES = ('rules-onlyA', 'set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40-%s-rules-onlyA-s10')
+
+
 def frames():
     """frames.tsv: type, PSNR, SSIM, loss and first-level loss of each image,
-    at GOP 9-3 and alarm periods of 7, 9 and 12 s, the four stacks."""
+    at GOP 9-3 and alarm periods of 7, 9 and 12 s, the four stacks; at 9 s,
+    the access-only stack too."""
     out = [HEADER['frames.tsv'],
            '\t'.join(('arm', 'fire', 'period', 'realisation', 'image', 'type', 'psnr', 'ssim', 'loss', 'l1loss'))]
     missing = 0
     for period in ('p7', 'p9', 'p12'):
-        for stack in ('pq', 'rules', 'hybrid', 'agents'):
+        arms = [(stack, 'set_%s_GC-PN-0p03-13_%s-n100-d40-%%s-%s%s' % (
+                    'AOMDV' if stack == 'pq' else 'AOMDV_QPV', period, stack, '' if period == 'p9' else '-s10'))
+                for stack in ('pq', 'rules', 'hybrid', 'agents')] + ([ACCESS_FRAMES] if period == 'p9' else [])
+        for stack, name in arms:
             for fk, fv in (('fire', 'F1'), ('fire2', 'F2'), ('fire3', 'F3')):
-                d = '%s/set_%s_GC-PN-0p03-13_%s-n100-d40-%s-%s%s' % (
-                    paths.SETS, 'AOMDV' if stack == 'pq' else 'AOMDV_QPV', period, fk, stack, '' if period == 'p9' else '-s10')
+                d = os.path.join(paths.SETS, name % fk)
                 st = glob.glob(d + '/encoding/*/st-frame.dat')
                 if not st:
                     print('missing set or encoding:', d, file=sys.stderr)
@@ -355,6 +364,30 @@ def frames():
     with open(path, 'w') as f:
         f.write('\n'.join(out) + '\n')
     print('%s: %d images, %d realisations missing' % (os.path.relpath(path), len(out) - 2, missing))
+
+
+def frames_access():
+    """The access-only stack's rows of frames.tsv once its sets are purged
+    (21 November 2026): read from study 10's results/images.tsv, which
+    code/metrics/compile_runs.py wrote from the same sim/rt-frame.dat files
+    (image, type, PSNR, SSIM, loss, loss of level 1, as written), and put
+    where frames() puts them, after the last row at T = 9 s; the other rows
+    are kept. Realisation r01 under F1, replayed on 26 November 2026 for the
+    gallery, wrote the same rt-frame.dat (data/sensors-rl/article/galerie/README.md)."""
+    arm, name = ACCESS_FRAMES
+    fires = {name % fk: fv for fk, fv in (('fire', 'F1'), ('fire2', 'F2'), ('fire3', 'F3'))}
+    src = paths.results(paths.STUDY_R1, 'images.tsv')
+    new = ['\t'.join((arm, fires[r['set']], 'p9', r['realisation'], r['image'], r['type'], r['psnr'], r['ssim'], r['loss'], r['loss1']))
+           for r in csv.DictReader((l for l in open(src) if not l.startswith('#')), delimiter='\t') if r['set'] in fires]
+    if len(new) != 3 * 20 * 12:
+        sys.exit('frames-access: %d image rows of the access-only stack in %s, 720 expected' % (len(new), src))
+    path = paths.data('frames.tsv')
+    lines = [l.rstrip('\n') for l in open(path)]
+    head, rows = lines[:2], [l for l in lines[2:] if l and l.split('\t')[0] != arm]
+    at = max(i for i, l in enumerate(rows) if l.split('\t')[2] == 'p9') + 1
+    with open(path, 'w') as f:
+        f.write('\n'.join(head + rows[:at] + new + rows[at:]) + '\n')
+    print('%s: %d images of the access-only stack from %s' % (os.path.relpath(path), len(new), os.path.relpath(src)))
 
 
 # ------------------------------------------------------------ oracle-s10.tsv

@@ -2,9 +2,14 @@
 Sans, Arial's metrics, the Helvetica of the TikZ diagrams), the Okabe-Ito
 palette, readable under every colour-vision deficiency, one colour per stack
 in every figure (grey AOMDV, blue rule stack, orange agents stack, green
-hybrid stack; the architecture's TikZ uses the same), means only, the panels
-lettered and captioned under each panel, one framed legend at the top right,
-legend colours equal to the marks', the edition's decimal marker on the axes.
+hybrid stack; the architecture's TikZ uses the same), means only, legend
+colours equal to the marks', the edition's decimal marker on the axes.
+
+The panels follow Figure 2 of the MDPI template: two at most
+a row, each with its letter alone under it, (a) with the letter bold, and
+with its own y-axis title; what a panel shows is in the caption. The legend
+of the series is one framed box at the top right, or in the free cell of the
+second row when a third panel leaves one.
 
 Each figure is drawn at the width it prints at (PRINT, the width of its
 \\includegraphics in sections/fr_*.tex), so that its type prints at the size
@@ -42,9 +47,9 @@ plt.rcParams.update({
 # \includegraphics in sections/fr_*.tex. When the .tex changes a factor,
 # change it here and regenerate.
 TEXT_W, FULL_W = 394.35522 / 72.27, 525.52245 / 72.27
-PRINT = {'scenario-carte': 0.85 * FULL_W, 'rejet-anticipe': 0.72 * TEXT_W,
+PRINT = {'scenario-carte': 0.8 * TEXT_W, 'rejet-anticipe': 0.72 * TEXT_W,
          'comparatif-psnr': 0.82 * FULL_W, 'comparatif-m1': 0.82 * FULL_W,
-         'galerie': 0.85 * FULL_W, 'trajectoires': 0.85 * TEXT_W}
+         'galerie': 0.85 * TEXT_W, 'trajectoires': 0.85 * TEXT_W}
 PAD = 0.04  # white margin around the drawing, inches
 LANG = 'fr'
 T = {
@@ -88,10 +93,17 @@ def decimal_axes(*axes):
         a.yaxis.set_major_formatter(f)
 
 
-def letter_panels(axes, titles):
+def letter(i):
+    """The letter of panel i as the MDPI template prints it: (a), the letter bold."""
+    return '($\\mathbf{%s}$)' % chr(97 + i)
+
+
+def letter_panels(axes):
+    """Each panel's letter alone, under it, a blank line under its x-axis
+    title; the caption describes the panel."""
     for i, a in enumerate(axes):
         xl = a.get_xlabel()
-        a.set_xlabel((xl + '\n\n' if xl else '') + f'({chr(97 + i)}) {titles[i]}')
+        a.set_xlabel((xl + '\n\n' if xl else '') + letter(i))
 
 
 def top_legend(fig, handles, labels, ncol=1, **kw):

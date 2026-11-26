@@ -129,6 +129,10 @@ def main():
     claim('S04', 'perte par pile et par GOP, six piles du tableau de qualité : min., max. (%) (limites)',
           'Or les piles du tableau \\ref{tab:fr-qualite} perdent 44 à 77 % des paquets, selon la pile et le GOP',
           [(min(lost), '=', 44, 0), (max(lost), '=', 77, 0)])
+    shortest = {s: min(STACKS + ('pq-tuned', access[s]), key=lambda a: quality.mean(a, 'delay_mean', s)) for s in SPLITS}
+    claim('S04', 'délai moyen des paquets reçus : la pile à accès seul la plus courte des six piles du tableau de qualité à chaque GOP',
+          'La pile à accès seul a le délai moyen le plus court des six piles du tableau \\ref{tab:fr-qualite}, à chaque GOP',
+          [(all(a == access[s] for s, a in shortest.items()), '=', True, 0)])
     delay = {s: {a: quality.mean(a, 'delay_mean', s) for a in STACKS} for s in SPLITS}
     claim('S04', 'délai moyen des paquets reçus : la pile hybride la plus courte des quatre piles à chaque GOP',
           'Parmi les quatre piles de E0, la pile hybride a aussi le délai moyen des paquets reçus le plus court à chaque GOP',

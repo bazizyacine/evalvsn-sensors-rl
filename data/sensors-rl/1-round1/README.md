@@ -23,10 +23,10 @@ repository).
 | E3 | frozen | `-frozen` | agents, hybrid | 3-9, 6-6, 9-3 | 18 (360) | every learning and exploration rate at 0: each agent stays on its initial choice |
 | E3 | decaying ε | `-edec-s10` | agents, hybrid | 9-3 | 6 (120) | exploration falling linearly to 0 between 60 and 114 s |
 | E4 | equal rate | `_p9r65`, `_p9r32` | rules, hybrid | 3-9, 6-6 | 12 (240) | GOPs 3-9 and 6-6 at the mean packet rate of GOP 9-3 (T = 9.65 and 9.32 s) |
-| E4 | coefficient 0.1 | `_GC-QC-0p1_`, `-t168-s10` | all four | 9-3 | 12 (240) | the quality coefficient 0.1 instead of 0.01 (`code/campaign/ipFiles/GC-QC-0p1.dat`), simulated for the 168 s of their counterparts of the main study (`simtime=168`) |
-| E5 | load | `_p7`, `_p12`, `_p18`, `_p30` | all four | 9-3 | 48 (960) | alarm periods of 7, 12, 18 and 30 s instead of 9 s |
+| E4 | coefficient 0.1 | `_GC-QC-0p1_`, `-t168-s10` | all~four | 9-3 | 12 (240) | the quality coefficient 0.1 instead of 0.01 (`code/campaign/ipFiles/GC-QC-0p1.dat`), simulated for the 168 s of their counterparts of the main study (`simtime=168`) |
+| E5 | load | `_p7`, `_p12`, `_p18`, `_p30` | all~four | 9-3 | 48 (960) | alarm periods of 7, 12, 18 and 30 s instead of 9 s |
 | E5 | fire | `-az015`, `-az05`, `-az165`, `-pf0`, `-pf025`, `-pf075`, `-fd1` | rules, hybrid | 9-3 | 42 (840) | heated-zone attenuation of 0.15, 0.5 and 1.65 dB/m instead of 1; failure probability of 0, 0.25 and 0.75 instead of 0.5; failures closer to the front |
-| E5 | scenario | `-forest`, `-smoke`, `-j8`, `-swap`, `-v15` | all four | 9-3 | 60 (1200) | two other videos, at their own GOP 9-3 coefficients; a 30 m grid with an irregular deployment of ±8 m and scaled ignitions; camera and sink swapped; head speed times 1.5 |
+| E5 | scenario | `-forest`, `-smoke`, `-j8`, `-swap`, `-v15` | all~four | 9-3 | 60 (1200) | two other videos, at their own GOP 9-3 coefficients; a 30 m grid with an irregular deployment of ±8 m and scaled ignitions; camera and sink swapped; head speed times 1.5 |
 | the agents' traces |  | `-tr-s10` | agents, hybrid | 9-3 | 6 (120) | `rl_trace=1`: each agent's action counts and values every 20 s; the runs replay those of the main study exactly |
 
 The agents' letters: P (path), C (congestion threshold), B (link-break

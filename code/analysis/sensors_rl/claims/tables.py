@@ -272,39 +272,58 @@ def claims(C):
         """The mean PSNR of the access-only stack at a level of a series (None: the reference scenario)."""
         return access.mean('access', access.REFERENCE if key is None else next(v for v in access.SERIES[series] if v.key == key))
 
+    # the access-only stack minus the rule stack, Holm within each series; the
+    # reference scenario's, the period of 9 s, within the load series
+    lead = {s: access.tests(s, 'access - rules') for s in ('load', 'fire', 'scenario')}
+
+    def ahead(series, key):
+        """[the gap, its p] of the access-only stack over the rule stack at a level of a series (None: the reference scenario)."""
+        e = lead['load'][access.REFERENCE.key] if key is None else lead[series][key]
+        return [Over(e) if series == 'scenario' else e, P(e.holm)]
+
     ld, fi, sc = robustness.load(), robustness.fire(), robustness.scenario()
-    rows('revision-charge', 'tableau de la charge, cinq périodes : perte des règles (%), PSNR des cinq piles, pile hybride − règles : PSNR '
-         'et p, Holm sur cinq périodes, images ≥ 28 dB',
+    rows('revision-charge', 'tableau de la charge, cinq périodes : perte des règles (%), PSNR des cinq piles, pile à accès seul − règles et '
+         'pile hybride − règles : PSNR et p, Holm sur cinq périodes, images ≥ 28 dB',
          [('%s%s' % ('\\midrule ' if i else '', t), text,
            [ld['loss'][p]] + [alone('load', p) if st == 'access' else ld['means'][p][st] for st in ('pq', 'rules', 'access', 'agents', 'hybrid')]
-           + [ld['psnr'][p], P(ld['psnr'][p].holm), ld['images'][p].mean])
+           + ahead('load', p) + [ld['psnr'][p], P(ld['psnr'][p].holm), ld['images'][p].mean])
           for i, (p, t, text) in enumerate((
-              ('p7', '7', '63,5 & 18,64 & 24,36 & 23,64 & 22,60 & 23,44 & −0,92 [−1,27 ; −0,57] & < 0,001 & −2,0'),
-              ('p9', '9', '56,2 & 18,81 & 27,29 & 29,29 & 27,24 & 29,31 & +2,02 [1,50 ; 2,53] & < 0,001 & +1,9'),
-              ('p12', '12', '35,6 & 20,08 & 31,27 & 33,60 & 31,68 & 33,69 & +2,42 [1,82 ; 3,02] & < 0,001 & +0,8'),
-              ('p18', '18', '1,5 & 35,88 & 59,00 & 58,88 & 59,41 & 59,89 & +0,89 [−0,18 ; 1,97] & 0,205 & +0,1'),
-              ('p30', '30', '0,5 & 45,32 & 62,74 & 62,73 & 62,21 & 62,21 & −0,53 [−1,44 ; 0,38] & 0,247 & −0,1')))])
+              ('p7', '7', '63,5 & 18,64 & 24,36 & 23,64 & 22,60 & 23,44 & −0,73 [−1,07 ; −0,38] & < 0,001 & −0,92 [−1,27 ; −0,57] & < 0,001 '
+               '& −2,0'),
+              ('p9', '9', '56,2 & 18,81 & 27,29 & 29,29 & 27,24 & 29,31 & +2,00 [1,38 ; 2,62] & < 0,001 & +2,02 [1,50 ; 2,53] & < 0,001 & +1,9'),
+              ('p12', '12', '35,6 & 20,08 & 31,27 & 33,60 & 31,68 & 33,69 & +2,34 [1,72 ; 2,96] & < 0,001 & +2,42 [1,82 ; 3,02] & < 0,001 '
+               '& +0,8'),
+              ('p18', '18', '1,5 & 35,88 & 59,00 & 58,88 & 59,41 & 59,89 & −0,12 [−1,15 ; 0,91] & 1,000 & +0,89 [−0,18 ; 1,97] & 0,205 & +0,1'),
+              ('p30', '30', '0,5 & 45,32 & 62,74 & 62,73 & 62,21 & 62,21 & −0,01 [−0,50 ; 0,49] & 1,000 & −0,53 [−1,44 ; 0,38] & 0,247 & −0,1')))])
 
     def gain(v, m):
         return fi['reference'][m] if v is None else fi['families']['gain'][m][v]
 
-    rows('revision-sensibilite', 'tableau des paramètres du feu, référence (test unique) et sept variantes (Holm sur sept) : perte des '
-         'règles (%), PSNR des trois piles, pile hybride − règles : PSNR et p, perte M1, images ≥ 28 dB, déclarations',
+    rows('revision-sensibilite', 'tableau des paramètres du feu, référence et sept variantes : perte des règles (%), PSNR des trois piles, '
+         'pile à accès seul − règles (Holm sur sept, la référence sur cinq périodes) et pile hybride − règles (Holm sur sept, la référence '
+         'test unique) : PSNR et p ; perte M1, images ≥ 28 dB, déclarations',
          [('%s%s' % ('\\midrule ' if i else '', head), text,
            [fi['means'][robustness.arm('rules', v)]['loss'], fi['means'][robustness.arm('rules', v)]['psnr'], alone('fire', v),
-            fi['means'][robustness.arm('hybrid', v)]['psnr'], gain(v, 'psnr'), P(gain(v, 'psnr').p if v is None else gain(v, 'psnr').holm)]
+            fi['means'][robustness.arm('hybrid', v)]['psnr']] + ahead('fire', v)
+           + [gain(v, 'psnr'), P(gain(v, 'psnr').p if v is None else gain(v, 'psnr').holm)]
            + [gain(v, m).mean for m in ('m1loss', 'usable', 'declared')])
           for i, (v, head, text) in enumerate((
-              (None, '\\begin{tabular}[c]{@{}l@{}}Référence\\\\ (\\mathrm{AZ} = 1 dB/m, \\mathrm{PF} = 0,5)\\end{tabular}',
-               '56,2 & 27,29 & 29,29 & 29,31 & +2,02 [1,50 ; 2,53] & < 0,001 & −4,9 & +1,9 & −14,7'),
-              ('az015', '\\mathrm{AZ} = 0,15 dB/m', '56,0 & 27,11 & 28,76 & 28,79 & +1,68 [1,15 ; 2,21] & < 0,001 & −3,1 & +1,7 & −15,4'),
-              ('az05', '\\mathrm{AZ} = 0,5 dB/m', '55,5 & 27,28 & 29,30 & 28,96 & +1,69 [1,17 ; 2,21] & < 0,001 & −3,0 & +1,7 & −14,7'),
-              ('az165', '\\mathrm{AZ} = 1,65 dB/m', '55,9 & 27,50 & 29,14 & 29,04 & +1,55 [1,05 ; 2,04] & < 0,001 & −3,5 & +1,9 & −14,3'),
-              ('pf0', '\\mathrm{PF} = 0', '56,1 & 27,36 & 29,33 & 29,18 & +1,82 [1,26 ; 2,38] & < 0,001 & −4,0 & +1,8 & −14,1'),
-              ('pf025', '\\mathrm{PF} = 0,25', '56,5 & 27,28 & 29,30 & 29,31 & +2,03 [1,46 ; 2,59] & < 0,001 & −4,6 & +2,0 & −14,7'),
-              ('pf075', '\\mathrm{PF} = 0,75', '56,1 & 27,41 & 29,28 & 29,33 & +1,91 [1,40 ; 2,43] & < 0,001 & −4,5 & +1,8 & −14,4'),
-              ('fd1', 'Pannes près du front\\textsuperscript{1}',
-               '56,2 & 27,34 & 29,30 & 29,20 & +1,86 [1,34 ; 2,38] & < 0,001 & −4,0 & +1,8 & −14,5')))])
+              (None, '\\begin{tabular}[c]{@{}l@{}}Référence\\\\ (\\mathrm{AZ} = 1 dB/m,\\\\ \\mathrm{PF} = 0,5)\\end{tabular}',
+               '56,2 & 27,29 & 29,29 & 29,31 & +2,00 [1,38 ; 2,62] & < 0,001 & +2,02 [1,50 ; 2,53] & < 0,001 & −4,9 & +1,9 & −14,7'),
+              ('az015', '\\mathrm{AZ} = 0,15 dB/m',
+               '56,0 & 27,11 & 28,76 & 28,79 & +1,65 [1,10 ; 2,20] & < 0,001 & +1,68 [1,15 ; 2,21] & < 0,001 & −3,1 & +1,7 & −15,4'),
+              ('az05', '\\mathrm{AZ} = 0,5 dB/m',
+               '55,5 & 27,28 & 29,30 & 28,96 & +2,03 [1,59 ; 2,46] & < 0,001 & +1,69 [1,17 ; 2,21] & < 0,001 & −3,0 & +1,7 & −14,7'),
+              ('az165', '\\mathrm{AZ} = 1,65 dB/m',
+               '55,9 & 27,50 & 29,14 & 29,04 & +1,65 [1,10 ; 2,19] & < 0,001 & +1,55 [1,05 ; 2,04] & < 0,001 & −3,5 & +1,9 & −14,3'),
+              ('pf0', '\\mathrm{PF} = 0',
+               '56,1 & 27,36 & 29,33 & 29,18 & +1,97 [1,37 ; 2,56] & < 0,001 & +1,82 [1,26 ; 2,38] & < 0,001 & −4,0 & +1,8 & −14,1'),
+              ('pf025', '\\mathrm{PF} = 0,25',
+               '56,5 & 27,28 & 29,30 & 29,31 & +2,02 [1,42 ; 2,62] & < 0,001 & +2,03 [1,46 ; 2,59] & < 0,001 & −4,6 & +2,0 & −14,7'),
+              ('pf075', '\\mathrm{PF} = 0,75',
+               '56,1 & 27,41 & 29,28 & 29,33 & +1,87 [1,24 ; 2,49] & < 0,001 & +1,91 [1,40 ; 2,43] & < 0,001 & −4,5 & +1,8 & −14,4'),
+              ('fd1', '\\begin{tabular}[c]{@{}l@{}}Pannes près\\\\ du front\\textsuperscript{1}\\end{tabular}',
+               '56,2 & 27,34 & 29,30 & 29,20 & +1,96 [1,37 ; 2,55] & < 0,001 & +1,86 [1,34 ; 2,38] & < 0,001 & −4,0 & +1,8 & −14,5')))])
 
     def contrast(c, v, m):
         return sc['reference'][c][m] if v is None else sc['families']['gap'][c][m][v]
@@ -316,27 +335,28 @@ def claims(C):
             out += [Over(e_), P(e_.p if v is None else e_.holm), contrast(c, v, 'usable').mean]
         return out
 
-    rows('revision-generalisation', 'tableau des variantes du scénario, référence (test unique) et cinq variantes (Holm sur cinq) : perte '
-         'des règles (%), PSNR des cinq piles, pile hybride − règles et pile à agents − règles : PSNR et p, images ≥ 28 dB',
+    rows('revision-generalisation', 'tableau des variantes du scénario, référence et cinq variantes : perte des règles (%), PSNR des cinq '
+         'piles, pile à accès seul − règles (Holm sur cinq variantes, la référence sur cinq périodes), pile hybride − règles et pile à '
+         'agents − règles (Holm sur cinq, la référence test unique) : PSNR et p, images ≥ 28 dB',
          [('%s%s' % ('\\midrule ' if i else '', head), text,
            [sc['means'][robustness.arm('rules', v)]['loss']]
            + [alone('scenario', v) if st == 'access' else sc['means'][robustness.arm(st, v)]['psnr']
-              for st in ('pq', 'rules', 'access', 'agents', 'hybrid')] + contrasts(v))
+              for st in ('pq', 'rules', 'access', 'agents', 'hybrid')] + ahead('scenario', v) + contrasts(v))
           for i, (v, head, text) in enumerate((
-              (None, 'Référence', '56,2 & 18,81 & 27,29 & 29,29 & 27,24 & 29,31 & +2,02 [1,50 ; 2,53] & < 0,001 & +1,9 & '
-               '−0,06 [−0,70 ; 0,59] & 0,863 & +0,1'),
-              ('forest', 'Vidéo forêt', '56,3 & 14,86 & 22,85 & 24,23 & 22,54 & 24,02 & +1,18 [0,65 ; 1,70] & < 0,001 & +0,5 & '
-               '−0,31 [−0,84 ; 0,23] & 0,506 & −0,6'),
-              ('smoke', 'Vidéo fumée', '52,9 & 21,25 & 32,12 & 34,06 & 31,53 & 33,77 & +1,64 [0,97 ; 2,31] & < 0,001 & +1,0 & '
-               '−0,59 [−1,32 ; 0,14] & 0,330 & −0,7'),
-              ('j8', 'Grille de 30 m', '44,7 & 18,56 & 28,47 & 28,87 & 26,53 & 28,86 & +0,40 [−0,11 ; 0,91] & 0,124 & +0,6 & '
-               '−1,93 [−2,41 ; −1,45] & < 0,001 & −1,9'),
+              (None, 'Référence', '56,2 & 18,81 & 27,29 & 29,29 & 27,24 & 29,31 & +2,00 [1,38 ; 2,62] & < 0,001 & '
+               '+2,02 [1,50 ; 2,53] & < 0,001 & +1,9 & −0,06 [−0,70 ; 0,59] & 0,863 & +0,1'),
+              ('forest', 'Vidéo forêt', '56,3 & 14,86 & 22,85 & 24,23 & 22,54 & 24,02 & +1,38 [0,82 ; 1,95] & < 0,001 & '
+               '+1,18 [0,65 ; 1,70] & < 0,001 & +0,5 & −0,31 [−0,84 ; 0,23] & 0,506 & −0,6'),
+              ('smoke', 'Vidéo fumée', '52,9 & 21,25 & 32,12 & 34,06 & 31,53 & 33,77 & +1,94 [1,25 ; 2,62] & < 0,001 & '
+               '+1,64 [0,97 ; 2,31] & < 0,001 & +1,0 & −0,59 [−1,32 ; 0,14] & 0,330 & −0,7'),
+              ('j8', 'Grille de 30 m', '44,7 & 18,56 & 28,47 & 28,87 & 26,53 & 28,86 & +0,41 [−0,11 ; 0,93] & 0,124 & '
+               '+0,40 [−0,11 ; 0,91] & 0,124 & +0,6 & −1,93 [−2,41 ; −1,45] & < 0,001 & −1,9'),
               ('swap', '\\begin{tabular}[c]{@{}l@{}}Caméra et puits\\\\ échangés\\end{tabular}',
-               '57,0 & 19,02 & 27,45 & 29,09 & 26,65 & 28,69 & +1,25 [0,72 ; 1,77] & < 0,001 & +1,4 & '
-               '−0,80 [−1,41 ; −0,19] & 0,046 & −0,4'),
+               '57,0 & 19,02 & 27,45 & 29,09 & 26,65 & 28,69 & +1,65 [1,13 ; 2,16] & < 0,001 & '
+               '+1,25 [0,72 ; 1,77] & < 0,001 & +1,4 & −0,80 [−1,41 ; −0,19] & 0,046 & −0,4'),
               ('v15', '\\begin{tabular}[c]{@{}l@{}}Vitesse de tête\\\\ \\times 1,5\\end{tabular}',
-               '58,3 & 19,04 & 27,13 & 28,89 & 27,05 & 29,03 & +1,90 [1,33 ; 2,46] & < 0,001 & +1,9 & '
-               '−0,09 [−0,65 ; 0,48] & 0,763 & +0,2')))])
+               '58,3 & 19,04 & 27,13 & 28,89 & 27,05 & 29,03 & +1,75 [1,13 ; 2,38] & < 0,001 & '
+               '+1,90 [1,33 ; 2,46] & < 0,001 & +1,9 & −0,09 [−0,65 ; 0,48] & 0,763 & +0,2')))])
 
     # ------------------------------------------------------------ the costs
     over, rev, routing = overhead.inputs()
