@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "EvalVSN: Reinforcement Learning Agents in a Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor Networks"
-version: "v2.1.3"
+version: "v2.1.4"
 doi: 10.5281/zenodo.24147853
 date-released: 2026-11-26
 identifiers:

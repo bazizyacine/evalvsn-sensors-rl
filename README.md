@@ -2,7 +2,7 @@
 
 Supporting material for the article *Reinforcement Learning Agents in a Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor Networks* (M. Y. Baziz, L. Sekhri
 and B. Kechar), in the second round of review at *Sensors* (MDPI). This
-release, v2.1.3, is the version of the manuscript revised for that round:
+release, v2.1.4, is the version of the manuscript revised for that round:
 the code that ran the simulations, the results of every simulation and the
 commands that reproduce them.
 
@@ -472,7 +472,7 @@ The licenses go by directory:
 
 ## Citation
 
-This release, v2.1.3, is archived at Zenodo. All its versions share the
+This release, v2.1.4, is archived at Zenodo. All its versions share the
 concept DOI [10.5281/zenodo.24147853](https://doi.org/10.5281/zenodo.24147853), which
 leads to the latest one; the Zenodo record of each version gives the DOI of
 that version.

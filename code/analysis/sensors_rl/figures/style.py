@@ -138,16 +138,18 @@ def fit_width(fig, name, layout=None, keep_aspect=False):
 
 
 def save(fig, name, fill_print=False):
-    """600 dpi, 8-bit RGB: matplotlib writes RGBA, MDPI asks for RGB.
+    """650 dpi, 8-bit RGB: matplotlib writes RGBA, MDPI asks for RGB and no
+    less than 600 dpi; at 650, every figure still prints at 600 ppi or more
+    once \\includegraphics scales it.
     `fill_print`: the drawing is narrower than its print width, which the
     \\includegraphics enlarges; the dpi rises so that the PNG still prints at
     600 ppi or more (one more dot per inch for pdfTeX's rounding of the scale)."""
     os.makedirs(paths.FIGURES, exist_ok=True)
     path = os.path.join(paths.FIGURES, f'{LANG}_{name}.png')
-    dpi = 600
+    dpi = 650
     if fill_print:
         w = fig.get_tightbbox(fig.canvas.get_renderer()).width + 2 * PAD
-        dpi = max(600, math.ceil(600 * PRINT[name] / w) + 1)
+        dpi = max(650, math.ceil(600 * PRINT[name] / w) + 1)
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight', pad_inches=PAD, facecolor='white')
     plt.close(fig)

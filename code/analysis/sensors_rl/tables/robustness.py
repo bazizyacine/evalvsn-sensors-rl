@@ -156,22 +156,37 @@ SCENARIO_ROWS = ((None, 'Référence', 'Reference'),
                  ('forest', 'Vidéo forêt', 'Forest video'),
                  ('smoke', 'Vidéo fumée', 'Smoke video'),
                  ('j8', 'Grille de \\SI{30}{\\metre}', '\\SI{30}{\\metre} grid'),
-                 ('swap', TWO_LINES % ('Caméra et puits', 'échangés'), TWO_LINES % ('Camera and sink', 'swapped')),
-                 ('v15', TWO_LINES % ('Vitesse de tête', '$\\times 1{,}5$'), TWO_LINES % ('Head spread rate', '$\\times 1.5$')))
+                 ('swap', TWO_LINES % ('Caméra et puits', 'échangés'), TWO_LINES % ('Camera and', 'sink swapped')),
+                 ('v15', TWO_LINES % ('Vitesse de tête', '$\\times 1{,}5$'), TWO_LINES % ('Head spread', 'rate $\\times 1.5$')))
 SCENARIO_GROUPS = {'fr': ('PSNR (dB)', 'Accès seul $-$ Règles', 'Hybride $-$ Règles', 'Agents $-$ Règles'),
                    'en': ('PSNR (dB)', 'Access only $-$ Rules', 'Hybrid $-$ Rules', 'Agents $-$ Rules')}
 SCENARIO_COLUMNS = {'fr': ('Variante', 'Perte (\\%)', 'AOMDV', 'Règles', 'Accès seul', 'Agents', 'Hybride', 'PSNR (dB)', '$p$')
                     + ('PSNR (dB)', '$p$', cells.IMAGES) * 2,
                     'en': ('Variant', 'Loss (\\%)', 'AOMDV', 'Rules', 'Access only', 'Agents', 'Hybrid', 'PSNR (dB)', '$p$')
                     + ('PSNR (dB)', '$p$', cells.IMAGES) * 2}
-# Fourteen columns after the variant, the widest table: 7 pt (at 8 pt, the
-# stacks' names, the gaps and the p alone exceed the page), 2.5 pt between
-# columns, each gap over its interval, hence the two longest variants on two
-# lines.
-SCENARIO_SIZE = '\\scriptsize'
-SCENARIO_SEP = '2.5pt'
-SCENARIO_COLS = cells.xcols(('0.78', '1.07', '0.78', '0.78', '0.82', '0.97', '1.40', '0.85', '1.40', '0.85', '0.92', '1.61', '0.85', '0.92'),
-                            'l', fill=True)
+# Fourteen columns after the variant, the widest table: 8 pt, the smallest
+# size MDPI's instructions allow in a table, hence 0.8 pt between columns, each
+# gap over its interval and the two longest variants on two lines.
+SCENARIO_SIZE = '\\footnotesize'
+SCENARIO_SEP = '0.8pt'
+# At 8 pt, the columns take their natural widths and share the free width
+# equally (tabular*): fixed fractions, set for 7 pt, would overflow.
+SCENARIO_COLS = '@{\\extracolsep{\\fill}}l' + 'c' * 14
+
+
+# The wide headers of the scenario table on two lines, the columns of
+# tabular* taking their natural widths.
+SCENARIO_BREAKS = {'Loss (\\%)': ('Loss', '(\\%)'), 'Perte (\\%)': ('Perte', '(\\%)'),
+                   'Access only': ('Access', 'only'), 'Accès seul': ('Accès', 'seul'),
+                   'PSNR (dB)': ('PSNR', '(dB)'), cells.IMAGES: ('Images', '\\mbox{$\\geq$ 28~dB}')}
+
+
+def scenario_head(h):
+    """A bold header, on two centered lines when it is one of the wide ones."""
+    if h not in SCENARIO_BREAKS:
+        return '\\textbf{%s}' % h
+    a, b = SCENARIO_BREAKS[h]
+    return '\\begin{tabular}[c]{@{}c@{}}\\textbf{%s}\\\\ \\textbf{%s}\\end{tabular}' % (a, b)
 
 
 def scenario_estimate(res, contrast, v, metric):
@@ -190,11 +205,11 @@ def scenario_gap(res, contrast, v, metric):
 def write_scenario(lang, res):
     g1, g2, g3, g4 = SCENARIO_GROUPS[lang]
     out = [HEAD, cells.setup(lang), SCENARIO_SIZE, '\\setlength{\\tabcolsep}{%s}' % SCENARIO_SEP,
-           '\\begin{tabularx}{\\linewidth}{%s}' % SCENARIO_COLS, '\\toprule',
+           '\\begin{tabular*}{\\linewidth}{%s}' % SCENARIO_COLS, '\\toprule',
            ' & \\textbf{%s} & \\multicolumn{5}{c}{\\textbf{%s}} & \\multicolumn{2}{c}{\\textbf{%s}} & \\multicolumn{3}{c}{\\textbf{%s}}'
            ' & \\multicolumn{3}{c}{\\textbf{%s}} \\\\' % (LOSS_STACK[lang], g1, g2, g3, g4),
            '\\cmidrule(lr){2-2}\\cmidrule(lr){3-7}\\cmidrule(lr){8-9}\\cmidrule(lr){10-12}\\cmidrule(lr){13-15}',
-           ' & '.join('\\textbf{%s}' % h for h in SCENARIO_COLUMNS[lang]) + ' \\\\', '\\midrule']
+           ' & '.join(scenario_head(h) for h in SCENARIO_COLUMNS[lang]) + ' \\\\', '\\midrule']
     m = res['means']
     access = access_gaps('scenario', [v for v, _, _ in SCENARIO_ROWS])
     a_gaps = cells.intervals(access, 2, lang, lines=2)
@@ -212,7 +227,7 @@ def write_scenario(lang, res):
     body = cells.align_rows(body, lang, (1, 2, 3, 4, 5, 6, 8, 10, 11, 13, 14), pcols=(8, 10, 13))
     for r, after in zip(body, cells.rules(range(len(body)))):
         out += [' & '.join(r) + ' \\\\', after]
-    out.append('\\end{tabularx}')
+    out.append('\\end{tabular*}')
     return cells.write(lang, 'revision-generalisation', out)
 
 
