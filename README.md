@@ -1,47 +1,56 @@
-# EvalVSN — reinforcement learning agents in a cross-layer stack for video over wireless sensor networks
+# evalvsn-sensors-rl — EvalVSN: Reinforcement Learning Agents in a Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor Networks
 
-Supporting material for the article *Reinforcement Learning Agents in a
-Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor
-Networks* (M. Y. Baziz, L. Sekhri and B. Kechar), under revision in
-*Sensors* (MDPI). This release, v2.0.5, is the version of the revised
-manuscript: the code that ran the simulations, the results of every
-simulation and the commands that reproduce them.
+Supporting material for the article *Reinforcement Learning Agents in a Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor Networks* (M. Y. Baziz, L. Sekhri
+and B. Kechar), in the second round of review at *Sensors* (MDPI). This
+release, v2.1.0, is the version of the manuscript revised for that round:
+the code that ran the simulations, the results of every simulation and the
+commands that reproduce them.
 
 | Directory | Contents |
 |---|---|
-| `evalvsn/` | the EvalVSN tool, which codes the video of the camera and evaluates it at the sink (C++11 with GNU extensions, gnu++0x, OpenCV 4.6), with its `CMakeLists.txt` |
-| `ns-2-modules/` | every file added to or modified in ns-2.35, at its path under `ns-2.35/`: the cross-layer routing agent `aomdv_qpv/` (AOMDV Quality Prioritized Video, AOMDV_QPV) with its learning agents, the derived 802.15.4 MAC and PHY, the power monitor and the fire propagation model under `mac/`, the priority interface queue under `queue/`, the video source and sink under `evalvsn/`, and the release files they touch, `aomdv/` among them; its `README.md` lists them, with the switches of the revision's experiments |
-| `experiments/` | the simulation and measurement scripts: `run/` drives the simulations, `metrics/` extracts the measurements and holds the connectivity oracle, `ipFiles/` holds the encoder files of the sets, `sets.conf` declares the sets of the two studies; `studies/09-comparative/` (the 36 sets of the main study, experiment E0) and `studies/10-revision/` (the 261 sets of the other experiments) each hold `sets.txt`, a `README.md` and `results/`, with `runs.tsv`, one row per simulation |
-| `article/tools/` | the compilation of the simulations, the analysis of the codec, the paired tests with Holm correction, the analyses of variance, and the tables and figures of the article |
-| `article/src/data/` | the measurements behind every number of the article: `comparative.tsv` and `revision.tsv`, one row per simulation, and the files listed below |
-| `article/src/figures-src/icons/` | the Twemoji pictograms of Figure 2 (Twitter, Inc and other contributors, CC BY 4.0, license beside them) |
-| `LICENSE`, `LICENSE-data`, `ns-2-modules/LICENSE-GPL-2.0` | the licenses: GPL-3.0 for the EvalVSN tool and the scripts, GPL-2.0 or later for the files of the ns-2 modules written by the authors, CC BY 4.0 for the data (see License) |
+| `code/evalvsn/` | the EvalVSN tool, which codes the video of the camera and evaluates it at the sink (C++11 with GNU extensions, gnu++0x, OpenCV 4.6), with its `CMakeLists.txt` |
+| `code/ns2/` | `modules/ns-2.35/`, every file added to or modified in ns-2.35, at its path under `ns-2.35/`: the cross-layer routing agent `aomdv_qpv/` (AOMDV Quality Prioritized Video, AOMDV_QPV) with its learning agents, the derived 802.15.4 MAC and PHY, the power monitor and the fire propagation model under `mac/`, the priority interface queue under `queue/`, the video source and sink under `evalvsn/`, and the release files they touch, `aomdv/` among them; `build.sh`, which builds ns-2.35 with them; a `README.md` that lists them, with the switches of the revision's experiments |
+| `code/campaign/` | the simulation scripts: `run_sets.sh` runs the simulations of a set, `sets.conf` declares the sets of the three studies, `ipFiles/` holds their encoder files |
+| `code/metrics/` | the measurement scripts: the measurements of each simulation, the connectivity oracle, the routing counters (`routing_events.py`) and one row per simulation (`compile_runs.py`) |
+| `code/analysis/` | `sensors_rl`, the article's package, one entry point (`python3 -m sensors_rl`, run from `code/analysis/`): the compilation of the simulations and of the codec (`compile/`), the paired tests with Holm correction, the analyses of variance and the checks of their assumptions (`analysis/`), the tables (`tables/`), the figures (`figures/`) and the check of every number of the text (`claims/`) |
+| `data/sensors-rl/` | the three studies, each with its `sets.txt`, a `README.md` and `results/`, whose `runs.tsv` holds one row per simulation: `0-comparative/` (the 36 sets of the main study, experiment E0), `1-round1/` (the 261 sets of the other experiments, run for the first review round) and `2-round2/` (the 143 sets of the second round: its controls, the learned configurations of the channel access, whose frozen policies are in `policies/`, and the access-only stack in E4 and E5); and `article/`, the measurements behind every number of the article: `comparative.tsv`, `revision.tsv` and `round2.tsv`, one row per simulation, and the files listed below |
+| `article/figures-src/icons/` | the Twemoji pictograms of Figure 2 (Twitter, Inc and other contributors, CC BY 4.0, license beside them); the package writes the article's tables and figures under `article/tables/` and `article/figures/` |
+| `LICENSE`, `LICENSE-data`, `code/ns2/LICENSE-GPL-2.0` | the licenses: GPL-3.0 for the EvalVSN tool and the scripts, GPL-2.0 or later for the files of the ns-2 modules written by the authors, CC BY 4.0 for the data (see License) |
 | `CITATION.cff`, `.zenodo.json` | the reference of this release, and its record at Zenodo |
+
+The paths below are given from the root of the repository. The comments of
+the code call the three studies 09, 10 and 11.
 
 ## The experimental plan
 
 The article's plan (its Table 6) holds six experiments, E0 to E5. An
-experiment with several series, levels or groups of variants of its factor,
-tests each series within its own Holm family. A configuration is one set: one
+experiment holds one or several series of its factor; the families of Holm's
+correction are those of the article's table of families (`FAMILIES` in
+`code/analysis/sensors_rl/tables/plan.py`, printed by
+`report --only plan`). A configuration is one set: one
 stack, one fire, one GOP and one level of the factor, simulated as many times
-as `experiments/sets.conf` declares; `article/tools/make_tables_plan.py`
-counts them from the two `sets.txt` and writes the table.
+as `code/campaign/sets.conf` declares;
+`code/analysis/sensors_rl/tables/plan.py` counts them from the three
+`sets.txt` and writes the table. 24 sets of `2-round2`, the fixed settings of
+the channel access (480 simulations), stay outside the plan: the learned
+configurations replaced them, and the article reports them as the first
+version of that series.
 
 | Experiment | Question | Configurations (simulations) | Sets |
 |---|---|---|---|
-| E0 | Effect of the stack, the fire and the GOP | 36 (720) | `experiments/studies/09-comparative/` |
-| E1 | Implementation of AOMDV (series: control AOMDV, AOMDV with cross-layer timers) | 18 (360) | `experiments/studies/10-revision/` |
-| E2 | Contribution of each decision | 39 (780) | `experiments/studies/10-revision/` |
-| E3 | Adaptation of the agents (series: frozen, decaying ε) | 24 (480) | `experiments/studies/10-revision/` |
-| E4 | Video coding, GOP volume and quality coefficient (series: equal rate, coefficient 0.1) | 24 (480) | `experiments/studies/10-revision/` |
-| E5 | Reach of the lead of the hybrid stack (series: load, fire, scenario) | 150 (3000) | `experiments/studies/10-revision/` |
+| E0 | Effect of the stack, the fire and the GOP | 36 (720) | `data/sensors-rl/0-comparative/` |
+| E1 | Implementation of AOMDV (series: control AOMDV, AOMDV with cross-layer timers) | 18 (360) | `data/sensors-rl/1-round1/` |
+| E2 | Contribution of each decision (series: access only, learned configurations) | 77 (1388) | `data/sensors-rl/1-round1/`, `data/sensors-rl/2-round2/` |
+| E3 | Adaptation of the agents (series: frozen, exploration only or learning only, decaying ε, link break) | 48 (960) | `data/sensors-rl/1-round1/`, `data/sensors-rl/2-round2/` |
+| E4 | Video coding, GOP volume and quality coefficient (series: equal rate, coefficient 0.1) | 33 (660) | `data/sensors-rl/1-round1/`, `data/sensors-rl/2-round2/` |
+| E5 | Scope of the differences between the stacks (series: load, fire, scenario) | 198 (3960) | `data/sensors-rl/1-round1/`, `data/sensors-rl/2-round2/` |
 
 Two measurements without a code complete the plan (Section 2.7 of the
 article). The agents' traces rerun 120 simulations of E0, those of
-the agents and hybrid stacks at GOP 9-3 (6 sets of study 10),
-with a trace of the agents' choices and values every 20 s. The costs for a
-sensor node have no simulation of their own: they are measured on the
-simulations of E0 to E3, of E5 and of the traces.
+the agents and hybrid stacks at GOP 9-3 (6 sets of
+`1-round1`), with a trace of the agents' choices and values every 20 s. The
+costs for a sensor node have no simulation of their own: they are measured on
+the simulations of E0 to E2 and the traces.
 
 ## Building
 
@@ -53,15 +62,14 @@ and Pillow 12.3.
 1. ns-2.35, from the release `ns-allinone-2.35.tar.gz` (the ns-2 project,
    nsnam on SourceForge,
    https://sourceforge.net/projects/nsnam/files/allinone/ns-allinone-2.35/),
-   which this repository does not redistribute.
-   Unpack it, copy `ns-2-modules/` over its `ns-2.35/`, then run the
-   release's `install` script, which builds Tcl 8.5.10, Tk 8.5.10, OTcl 1.14,
-   TclCL 1.20 and then ns-2.35 (about 5 minutes):
+   which this repository does not redistribute. `code/ns2/build.sh`
+   downloads it, checks its SHA-256, unpacks it under `NS2_HOME`, copies
+   `code/ns2/modules/ns-2.35/` over its `ns-2.35/`, then runs the release's
+   `install` script, which builds Tcl 8.5.10, Tk 8.5.10, OTcl 1.14, TclCL 1.20
+   and then ns-2.35 (about 5 minutes):
 
    ```bash
-   tar -xzf ns-allinone-2.35.tar.gz
-   cp -r ns-2-modules/. ns-allinone-2.35/ns-2.35/
-   (cd ns-allinone-2.35 && ./install)
+   NS2_HOME=$PWD/ns-allinone-2.35 bash code/ns2/build.sh
    export PATH=$PWD/ns-allinone-2.35/ns-2.35:$PATH
    ```
 
@@ -74,15 +82,15 @@ and Pillow 12.3.
    ns-2.35 does not use it. The `ns` binary needs no other variable than the
    `PATH`. The release's 802.15.4 classes are left untouched; the stack lives
    in derived classes.
-2. The EvalVSN tool: `cmake . && make` under `evalvsn/`, which builds
+2. The EvalVSN tool: `cmake . && make` under `code/evalvsn/`, which builds
    `bin/evalvsn` (CMake 3.5 or later, the OpenCV 4.6 development files; the
-   default build type, Debug, is the one `analyse_codec.py` reproduces).
+   default build type, Debug, is the one `sensors_rl/compile/codec.py` reproduces).
 3. The videos: each content is a 12 s cut of a video of the FLAME 2 dataset
    (Hopkins et al., IEEE DataPort, 2022, https://doi.org/10.21227/swyw-6j78), which
    this repository does not redistribute: in the YUV file, 300 frames at 25 frames per second,
-   QCIF (176 × 144 pixels), YUV 4:2:0, under `evalvsn/videos/`; the encoder
-   reads the AVI file and codes twelve frames of each in grayscale (Table
-   2 of the article).
+   QCIF (176 × 144 pixels), YUV 4:2:0, under `code/campaign/videos/`; the
+   encoder reads the AVI file and codes twelve frames of each in grayscale
+   (Table 2 of the article).
 
    | Content | FLAME 2 video | From | Read by |
    |---|---|---|---|
@@ -90,27 +98,29 @@ and Pillow 12.3.
    | `forest_qcif` | `#18) RGB Preburn Video 2.MP4` | 60.0 s | E5 (scenario) |
    | `smoke_qcif` | `#7) RGB Video 7.MP4` | 170.0 s | E5 (scenario) |
 
-   With FFmpeg 6.1.1, these two commands write the `fire_qcif` files the
-   simulations read, byte for byte (their SHA-256 sums are given below):
+   With FFmpeg 6.1.1, these two commands, run from the root of the
+   repository with the FLAME 2 video copied there, write the `fire_qcif`
+   files the simulations read, byte for byte (their SHA-256 sums are given
+   below):
 
    ```bash
    ffmpeg -ss 27.0 -t 12 -i "#6) RGB Video 6.MP4" -vf "fps=25,scale=176:144" \
-     -frames:v 300 -pix_fmt yuv420p -f rawvideo evalvsn/videos/fire_qcif.yuv
+     -frames:v 300 -pix_fmt yuv420p -f rawvideo code/campaign/videos/fire_qcif.yuv
    ffmpeg -ss 27.0 -t 12 -i "#6) RGB Video 6.MP4" -vf "fps=25,scale=176:144" \
-     -pix_fmt yuv420p -q:v 2 evalvsn/videos/fire_qcif.avi
+     -pix_fmt yuv420p -q:v 2 code/campaign/videos/fire_qcif.avi
    ```
 
    The AVI of `fire_qcif` is cut from the FLAME 2 video itself, at the
    quantizer 2 (`-q:v 2`). Its header declares 301 frames
    (12.04 s): 300 coded frames and an empty entry after the
    first one. EvalVSN takes the frame count from the header
-   (`CAP_PROP_FRAME_COUNT`, `evalvsn/src/evalvsn.cc`) and codes one frame in
-   26 (Table 2 of the article). An AVI converted from
-   `fire_qcif.yuv` declares 300 frames: EvalVSN would code one frame
-   in 25, other images. The other contents are cut with the first
-   command, from their video and instant in the table above, then converted
-   with `ffmpeg -s qcif -i evalvsn/videos/<content>.yuv evalvsn/videos/<content>.avi`, which writes their AVI byte for byte.
-   `experiments/run/run_sets.sh` converts the YUV file only when the AVI is
+   (`CAP_PROP_FRAME_COUNT`, `code/evalvsn/src/evalvsn.cc`) and codes one
+   frame in 26 (Table 2 of the article). An AVI converted
+   from `fire_qcif.yuv` declares 300 frames: EvalVSN would code one
+   frame in 25, other images. The other contents are cut with the
+   first command, from their video and instant in the table above, then
+   converted with `ffmpeg -s qcif -i code/campaign/videos/<content>.yuv code/campaign/videos/<content>.avi`, which writes their AVI byte for byte.
+   `code/campaign/run_sets.sh` converts the YUV file only when the AVI is
    missing or `--regen-avi` is passed: write `fire_qcif.avi` with the command
    above before running a set. The start of `fire_qcif` was found afterwards,
    by matching its first frame (mean squared error of 4.4).
@@ -124,14 +134,14 @@ Table 1. Network and simulation parameters, and factors of the main study E0.
 | Category | Parameter | Value |
 |---|---|---|
 | Common configuration | Simulator | ns-2.35, IEEE 802.15.4 at 2.4 GHz, 250 kbit/s |
-|  | Topology | grid of 10 × 10 nodes spaced 40 m apart, camera and sink at opposite corners |
+|  | Topology | 10 × 10 grid of nodes spaced 40 m apart, camera and sink at opposite corners |
 |  | Radio | AT86RF231, transmission at +3 dBm, sensitivity of -101 dBm |
 |  | Clear channel assessment (CCA) | threshold of -91 dBm |
 |  | Propagation | log-distance with exponent 3.2, range of 48.6 m |
 |  | Interface queue | 16 packets |
-|  | Traffic | one reading of 32 bytes every 60 s throughout the mission; from detection at 60 s, one image every 9 s, in packets sent every 15 ms |
-|  | Simulated duration | 168 or 169 s depending on the group of pictures (GOP) structure |
-|  | Agents | learning rate of 0.3 (routing) and 0.2 (access), exploration of 0.1 |
+|  | Traffic | one reading of 32 bytes every 60 s throughout the mission; from detection at 60 s onward, one image every 9 s, in packets sent 15 ms apart |
+|  | Simulated duration | 168 or 169 s depending on the Group of Pictures (GOP) structure |
+|  | Agents | learning rate of 0.3 (routing) and 0.2 (access), exploration rate of 0.1 |
 | Studied factors | Stack | Ad hoc On-demand Multipath Distance Vector (AOMDV), rules, agents, hybrid |
 |  | Fire | F1, F2, F3 (Table 3) |
 |  | GOP structure | 3-9, 6-6, 9-3 (Table 2) |
@@ -141,40 +151,44 @@ Table 2. Parameters of the EvalVSN tool.
 
 | Parameter | Value |
 |---|---|
-| Videos | FLAME 2 (fire, forest before the burn, smoke), cut with FFmpeg 6.1.1; 176 × 144 pixels in grayscale, 12 frames |
+| Videos | FLAME 2 (fire, forest before the burn, smoke), cut with FFmpeg 6.1.1; 176 × 144 grayscale pixels, 12 frames |
 | Encoder | Modified Moving Picture Experts Group (MMPEG), as implemented in EvalVSN |
-| Frame rate | 1 image per second, hence 12 of the 301 images of the source, at 25 images per second, that is, one in 26, every 1.04 s (one in 25, every 1.00 s, for the 300 images of the forest and smoke videos of the scenario variants, Section 2.7) |
-| Skip threshold | zero, no skipped image |
-| GOP coefficient GC | 0.01597, 0.02525 or 0.03, that is, GOP 3-9, 6-6 or 9-3, a studied factor of E0 |
-| Quality coefficient | 0.01 on the luminance table of the Joint Photographic Experts Group (JPEG) |
-| Priority levels | 13, one per diagonal of the zigzag scan of a block, the first two and the last two merged |
-| Transform | classical discrete cosine transform, on blocks of 8 × 8 pixels |
-| Coefficient coding | run-length coding at all levels, then order-0 Exp-Golomb binary code |
-| Payload | at most 74 bytes, header included |
+| Frame rate | 1 image per second, hence 12 of the 301 images extracted from the source, two of them identical, which runs at 25 images per second, that is, one in 26, every 1.04 s after a first interval of 1.00 s (one in 25, every 1.00 s, for the 300 images of the forest and smoke videos of the scenario variants, Section 2.7) |
+| Skip threshold | zero, no image skipped |
+| GOP coefficient GC | 0.01597, 0.02525 or 0.03, for GOP 3-9, 6-6 or 9-3, respectively; studied factor of E0; 0.01597 and 0.15671 give GOP 9-3 for the forest and smoke videos of the scenario variants |
+| Quality coefficient | 0.01, applied to the luminance table of the Joint Photographic Experts Group (JPEG) |
+| Priority levels | 13, one per diagonal of the zigzag scan of a block, with the first two diagonals merged, as well as the last two |
+| Transform | classical discrete cosine transform on blocks of 8 × 8 pixels |
+| Coefficient coding | run-length coding at all levels, then order-0 Exp-Golomb binary coding |
+| Payload | at most 74 bytes, including the header |
 
 ## Reproducing the main study (E0)
 
 ```bash
-cd experiments/run
-for s in $(cat ../studies/09-comparative/sets.txt); do
+cd code/campaign
+for s in $(cat ../../data/sensors-rl/0-comparative/sets.txt); do
   fire=$(sed -E 's/.*-d[0-9]+-(fire[23]?)(-.*)?$/\1/' <<<"$s")   # fire, fire2 or fire3
   bash run_sets.sh --seed-name=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40-$fire "$s"
 done
-cd ../../article/tools
-python3 compile_comparative.py      # -> ../src/data/comparative.tsv
-python3 analyse_comparative.py      # paired tests, Holm, ANOVA
-python3 make_tables_comparative.py  # the tables, both editions
+cd ../analysis
+python3 -m sensors_rl data --only comparative     # -> data/sensors-rl/article/comparative.tsv
+python3 -m sensors_rl report --only comparative   # paired tests, Holm, ANOVA
+python3 -m sensors_rl tables                      # the tables, both editions
 ```
+
+The other experiments run the same way, from the `sets.txt` of `1-round1` and
+`2-round2`: "The exact commands, in order", below.
 
 The stacks (AOMDV, the rule stack, the agents stack, the hybrid stack), the
 fires (F1, F2, F3) and the GOP structures (3-9, 6-6 and 9-3, set by the GOP
-coefficient `gopCoef` of the encoder files `ipFiles/GC-PN-*.dat`) cross into
-36 sets of 20 simulations. The seed of a simulation derives from the
-name of the fire and its index (`--seed-name` above), not from the stack or
-the GOP, so the stacks and the GOPs of a fire undergo the same failures and
-the comparisons are paired. A set keeps its traces and decoded frames,
-several gigabytes per set; do not pass `--prune`, which deletes the routing
-trace (`aomdv_qpv.tr`) the compilation of the revision reads.
+coefficient `gopCoef` of the encoder files `code/campaign/ipFiles/GC-PN-*.dat`)
+cross into 36 sets of 20 simulations. The seed of a simulation
+derives from the name of the fire and its index (`--seed-name` above), not
+from the stack or the GOP, so the stacks and the GOPs of a fire undergo the
+same failures and the comparisons are paired. A set keeps its traces and
+decoded frames, several gigabytes per set, under `sets/` (or `SETS_DIR` when
+it is set); do not pass `--prune`, which deletes the routing trace
+(`aomdv_qpv.tr`) the compilation of the revision reads.
 
 ## Reading the measurements
 
@@ -186,35 +200,46 @@ M3 and of the D frames (%), and, in the column `recoverable`, the packets
 lost while a path of live nodes linked the camera to the sink, in % of the
 packets sent (the instantaneous-path losses of the article), given by the
 connectivity oracle. Every mean, confidence interval and test of E0 is
-computed from it by `analyse_comparative.py`, so each reported number can be
-checked without rerunning a simulation.
+computed from it by `sensors_rl/analysis/comparative.py`, so each reported
+number can be checked without rerunning a simulation.
 
 ## The raw results
 
-This release archives the raw result of every simulation of studies 09 and
-10, 720 and 5220 simulations, those the article reads. The
-per-packet traces are not included.
+This release archives the raw result of every simulation of the three
+studies, 720, 5220 and 2708 simulations: those the article
+reads and, in `2-round2`, the 480 of the fixed settings its plan leaves
+out. The per-packet traces are not included.
 
 ### What each file of the measurements is
 
+A writer named `data --only NAME` is the command
+`python3 -m sensors_rl data --only NAME`, run from `code/analysis/`.
+
 | File | Contents | Written by |
 |---|---|---|
-| `experiments/studies/09-comparative/results/runs.tsv` | the 720 simulations of study 09 (E0), one row each | `experiments/metrics/compile_runs.py` |
-| `experiments/studies/10-revision/results/runs.tsv` | the 5220 simulations of the 261 sets of study 10, one row each | `experiments/metrics/compile_runs.py` |
-| `experiments/studies/09-comparative/results/routing.tsv` | route requests, route errors, MAC drops, route-queue refusals, route replies and hellos per simulation, AOMDV and rule stacks at GOP 9-3 | `experiments/metrics/routing_events.py` |
-| `experiments/studies/10-revision/sets.txt`, `README.md` | the 261 sets of study 10, by experiment and series | |
-| `article/src/data/comparative.tsv` | one row per simulation of E0 (see above) | `compile_comparative.py` |
-| `article/src/data/fire-map-F1.tsv` to `fire-map-F3.tsv` | the state of each node at the instant the scenario figure draws, per fire | `compile_comparative.py` |
-| `article/src/data/galerie/` | the frames of the gallery figure, decoded at the sink, and their `README.md` | `evalvsn/bin/evalvsn -decode` |
-| `article/src/data/revision.tsv` | one row per simulation of studies 09 and 10 that the article reads: PSNR, SSIM, loss, M1 loss, usable images (PSNR ≥ 28 dB, and 25 and 31 dB), mean and 95th-percentile delay, late packets, neighbor-death declarations and the false ones, control messages | `compile_revision.py` |
-| `article/src/data/agent-trace.tsv` | the agents' decisions every 20 s in the 120 simulations of the agents' traces: deciding nodes, decisions, median per node, share away from the initial choice, decisions per action | `compile_agent_trace.py` |
-| `article/src/data/break-agent.tsv` | per simulation at GOP 9-3: the failure counts the link-break agent chose, the declarations per 18 s of the alarm, the PSNR of each image | `compile_break_agent.py` |
-| `article/src/data/frames.tsv` | per image, at alarm periods of 7, 9 and 12 s: type, PSNR, SSIM, packet loss and loss of the first priority level | `compile_frames.py` |
-| `article/src/data/oracle-s10.tsv` | per simulation of the load, fire and scenario series of E5: packets lost, and those lost while no path of live nodes joined camera and sink | `compile_oracle.py` |
-| `article/src/data/overhead.tsv` | radio energy per node and per network, and lifetime, per set at GOP 9-3 | `make_tables_overhead.py --compile` |
-| `article/src/data/methode-mesures.tsv` | the numbers the methods quote from the sets: simulated time and nodes out of service per alarm period, the worst-case connectivity, the correlation of each loss class with the PSNR, the frame sizes and reference PSNR per GOP, the calibration losses, the packets of the other videos | `methode_mesures.py` |
-| `article/src/data/codec-frames.tsv` | why a D frame of the fire video holds more bytes than an M frame: frames, bytes and packets per type and GOP, the same image coded as M and as D, the correlation and the energy of the DCT coefficients per band, the non-zero coefficients, the Exp-Golomb bits, the quality coefficient swept at GOP 9-3, the steps of the source video | `analyse_codec.py` |
-| `experiments/metrics/compile_runs.py`, `routing_events.py` | the raw-results compiler and the routing-event counter | |
+| `data/sensors-rl/0-comparative/results/runs.tsv` | the 720 simulations of the main study (E0), one row each | `code/metrics/compile_runs.py` |
+| `data/sensors-rl/1-round1/results/runs.tsv` | the 5220 simulations of the 261 sets of the first round, one row each | `code/metrics/compile_runs.py` |
+| `data/sensors-rl/2-round2/results/runs.tsv` | the 2708 simulations of the 143 sets of the second round, one row each | `code/metrics/compile_runs.py` |
+| `data/sensors-rl/0-comparative/results/routing.tsv` | route requests, route errors, MAC drops, route-queue refusals, route replies, hellos and energy per simulation of the main study | `code/metrics/routing_events.py` |
+| `data/sensors-rl/*/results/images.tsv`, `oracle.tsv`, `declarations.tsv` | per simulation: the PSNR, SSIM and loss of each priority level of each image at the sink; the lost packets recoverable or not by the connectivity oracle; what each declaration of a dead neighbor hits | `code/metrics/compile_runs.py --tables` |
+| `data/sensors-rl/1-round1/results/sets.tsv` | the moments of each set's graphs (mean, standard deviation and count of each metric: energy per node and per network, lifetime among them) for the nine sets of the tuned AOMDV series of E1, one row each; no tool reads it | `code/metrics/setGraphs.pl`, per set |
+| `data/sensors-rl/1-round1/sets.txt`, `README.md` | the 261 sets of the first round, by experiment and series | |
+| `data/sensors-rl/2-round2/sets.txt`, `README.md` | the 143 sets of the second round, by control, and the protocols of the learned configurations and of the access-only stack in E4 and E5 | |
+| `data/sensors-rl/2-round2/policies/` | the 8 frozen configurations of the channel access, per node and state, which the replays of E2 read: 4 for the access-only stack, 4 for the hybrid stack | the development runs (`rl_access_dump`) |
+| `data/sensors-rl/article/comparative.tsv` | one row per simulation of E0 (see above) | `data --only comparative` |
+| `data/sensors-rl/article/fire-map-F1.tsv` to `fire-map-F3.tsv` | the state of each node at the instant the scenario figure draws, per fire | `data --only comparative` |
+| `data/sensors-rl/article/galerie/` | the frames of the gallery figure, decoded at the sink, and their `README.md` | `code/evalvsn/bin/evalvsn -decode` |
+| `data/sensors-rl/article/revision.tsv` | one row per simulation of the main study and of the first round that the article reads: PSNR, SSIM, loss, M1 loss, usable images (PSNR ≥ 28 dB, and 25 and 31 dB), mean and 95th-percentile delay, late packets, neighbor-death declarations and the false ones, control messages; frozen as the first round deposited it | `data --only revision` |
+| `data/sensors-rl/article/round2.tsv` | the same columns, one row per simulation of the second round (the controls, the learned configurations and their development runs, the fixed settings, the access-only stack in E4 and E5) | `data --only round2` |
+| `data/sensors-rl/article/agent-trace.tsv` | the agents' decisions every 20 s in the 120 simulations of the agents' traces: deciding nodes, decisions, median per node, share away from the initial choice, decisions per action | `data --only agent-trace` |
+| `data/sensors-rl/article/break-agent.tsv` | per simulation at GOP 9-3: the failure counts the link-break agent chose, the declarations per 18 s of the alarm, the PSNR of each image | `data --only break-agent` |
+| `data/sensors-rl/article/break-cases.tsv` | per simulation at GOP 9-3: what each declaration of a dead neighbor hits by the oracle's link budget (the neighbor out of service, a link the heated zone puts below the floor, a link within the budget), the HELLO purges, and, for the traced agents stack, the failure count of each declaration | `data --only break-cases` |
+| `data/sensors-rl/article/frames.tsv` | per image, at alarm periods of 7, 9 and 12 s: type, PSNR, SSIM, packet loss and loss of the first priority level | `data --only frames` |
+| `data/sensors-rl/article/oracle-s10.tsv` | per simulation of the load, fire and scenario series of E5: packets lost, and those lost while no path of live nodes joined camera and sink | `data --only oracle` |
+| `data/sensors-rl/article/overhead.tsv` | radio energy per node and per network, and lifetime, per set: the four stacks and the control AOMDV at the three GOPs, AOMDV with cross-layer timers and the access-only stack at GOP 9-3 | `data --only overhead` |
+| `data/sensors-rl/article/methode-mesures.tsv` | the numbers the methods quote from the sets: simulated time and nodes out of service per alarm period, the worst-case connectivity, the correlation of each loss class with the PSNR, the frame sizes and reference PSNR per GOP, the calibration losses, the packets of the other videos | `data --only methods` |
+| `data/sensors-rl/article/codec-frames.tsv` | why a D frame of the fire video holds more bytes than an M frame: frames, bytes and packets per type and GOP, the same image coded as M and as D, the correlation and the energy of the DCT coefficients per band, the non-zero coefficients, the Exp-Golomb bits, the quality coefficient swept at GOP 9-3, the steps of the source video | `data --only codec` |
+| `code/metrics/compile_runs.py`, `routing_events.py` | the raw-results compiler and the routing-event counter | |
 
 `runs.tsv` keys each row by `set` and `realisation`, gives the `seed` the
 simulation ran on, the keys of `revision.tsv` (`arm`, `fire`, `split`,
@@ -229,12 +254,14 @@ losses are the same numbers.
 
 ### The seeds
 
-Every set of studies 09 and 10 takes the seeds of
+Every set of the three studies takes the seeds of
 `set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40-<fire>`, `<fire>` being `fire`,
 `fire2` or `fire3`: the seed of realisation k is
 `cksum("<that name>-<k>") mod 900000 + 1` (`seed_for` in
-`experiments/run/run_sets.sh`), the column `seed` of `runs.tsv`, checked
-against the seed each set's log recorded.
+`code/campaign/run_sets.sh`), the column `seed` of `runs.tsv`, checked
+against the seed each set's log recorded. The one simulation of a development
+run of `2-round2` is one of realisations 21 and 22 of that series (`realisation=K` in
+its knobs), and runs as `r01`.
 
 ### Replaying one simulation
 
@@ -244,27 +271,31 @@ realisation of the campaigns). For the first realisation of the hybrid stack
 under F1 at GOP 9-3, about two minutes:
 
 ```bash
-cd experiments/run
+cd code/campaign
 bash run_sets.sh --sims=1 --seed=45026 set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40-fire-hybrid
 ```
 
-The run writes the realisation under `../sets/<set>/r01/`, whatever its
-index in the campaign; its `sim/mt.dat` holds, as written, the PSNR, SSIM and
-losses of the row (`set`, `r01`) of
-`experiments/studies/09-comparative/results/runs.tsv`. Built as above, the
+The run writes the realisation under `sets/<set>/r01/` (under `SETS_DIR`
+when it is set), whatever its index in the campaign; its `sim/mt.dat` holds,
+as written, the PSNR, SSIM and losses of the row (`set`, `r01`) of
+`data/sensors-rl/0-comparative/results/runs.tsv`. Built as above, the
 simulator and EvalVSN replay the campaigns bit for bit: on 14 November 2026,
 the 20 realisations of this set and one realisation of nine other sets of
-studies 09 and 10 wrote reception traces, packet traces and decoded images
-identical, byte for byte, to those of the campaigns.
+the main study and of the first round wrote reception traces, packet traces
+and decoded images identical, byte for byte, to those of the campaigns. The
+simulator has since gained the switches of the second round, off by default:
+built from this release's modules on 22 November 2026, it replayed the same way
+the first realisation of eighteen sets of the three studies.
 
 ### The exact commands, in order
 
-Prerequisites: ns-2.35 built with `ns-2-modules/` (see Building) and on the
-`PATH`, `evalvsn/bin/evalvsn`, perl, ffmpeg (ffprobe included), gnuplot and
-pdftoppm (poppler-utils) for the plots of `setGraphs.pl`, Python 3.12 with
-NumPy, Matplotlib and Pillow, the Liberation Sans font (fonts-liberation),
-with which the figures are drawn, and the videos under `evalvsn/videos/`.
-The files the simulations read have these SHA-256 sums:
+Prerequisites: ns-2.35 built with `code/ns2/build.sh` (see Building) and on
+the `PATH`, `code/evalvsn/bin/evalvsn`, perl, ffmpeg (ffprobe included),
+gnuplot and pdftoppm (poppler-utils) for the plots of `setGraphs.pl`, Python
+3.12 with NumPy, Matplotlib and Pillow, the Liberation Sans font
+(fonts-liberation), with which the figures are drawn, and the videos under
+`code/campaign/videos/`. The files the simulations read have these SHA-256
+sums:
 
 | File | SHA-256 |
 |---|---|
@@ -280,16 +311,18 @@ The files the simulations read have these SHA-256 sums:
    `--resume`, which keeps the realisations already harvested). A
    simulation takes 1.5 to 3.5 minutes on one core, a set of 20
    simulations 30 to 70 minutes, and a set keeps about 3.8 GB of traces,
-   decoded frames and log: the 297 sets take about 250 hours of one core and 1.1 TB of
-   disk. `run/` holds one campaign at a time (`run_sets.sh`
+   decoded frames and log: the 440 sets, 8648 simulations, take about
+   370 hours of one core and 1.7 TB of
+   disk. `code/campaign/` holds one campaign at a time (`run_sets.sh`
    takes a lock there): run sets in parallel from separate copies of the
-   repository.
+   repository. The replays of `2-round2` read the frozen policies of
+   `data/sensors-rl/2-round2/policies/`, which this repository holds.
 
    ```bash
-   cd experiments/run
+   cd code/campaign
    BASE=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40
-   for study in 09-comparative 10-revision; do
-     for s in $(cat ../studies/$study/sets.txt); do
+   for study in 0-comparative 1-round1 2-round2; do
+     for s in $(cat ../../data/sensors-rl/$study/sets.txt); do
        fire=$(sed -E 's/.*-d[0-9]+-(fire[23]?)(-.*)?$/\1/' <<<"$s")
        bash run_sets.sh --seed-name=$BASE-$fire "$s"
      done
@@ -302,111 +335,128 @@ The files the simulations read have these SHA-256 sums:
 
    ```bash
    cd ../metrics
-   python3 routing_events.py -o ../studies/09-comparative/results/routing.tsv \
-     set_AOMDV_GC-PN-0p03-13_p9-n100-d40-fire{,2,3}-pq set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40-fire{,2,3}-rules
-   for s in $(cat ../studies/10-revision/sets.txt); do
-     python3 routing_events.py -o ../sets/$s/events.tsv "$s"
+   python3 routing_events.py -o ../../data/sensors-rl/0-comparative/results/routing.tsv \
+     $(cat ../../data/sensors-rl/0-comparative/sets.txt)
+   for s in $(cat ../../data/sensors-rl/1-round1/sets.txt ../../data/sensors-rl/2-round2/sets.txt); do
+     python3 routing_events.py -o ../../sets/$s/events.tsv "$s"
    done
    ```
 
 3. The raw results, one row per simulation:
 
    ```bash
-   python3 compile_runs.py --seed-base=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40 09-comparative
-   python3 compile_runs.py --seed-base=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40 10-revision
+   python3 compile_runs.py --seed-base=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40 sensors-rl/0-comparative
+   python3 compile_runs.py --seed-base=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40 sensors-rl/1-round1
+   python3 compile_runs.py --seed-base=set_AOMDV_QPV_GC-PN-0p03-13_p9-n100-d40 sensors-rl/2-round2
    ```
 
-4. The measurements of the article, from the sets (`article/tools/`):
+   and, per simulation, the images, the oracle and the declarations: the same
+   commands with `--tables images,oracle,declarations`.
+
+4. The measurements of the article, from the sets (`code/analysis/`):
 
    ```bash
-   cd ../../article/tools
-   python3 compile_comparative.py           # comparative.tsv, fire-map-F1.tsv to F3
-   python3 compile_revision.py              # revision.tsv
-   python3 compile_agent_trace.py           # agent-trace.tsv
-   python3 compile_break_agent.py           # break-agent.tsv
-   python3 compile_frames.py                # frames.tsv
-   python3 compile_oracle.py                # oracle-s10.tsv
-   python3 make_tables_overhead.py --compile   # overhead.tsv, then its table
-   python3 methode_mesures.py               # methode-mesures.tsv
-   python3 analyse_codec.py                 # codec-frames.tsv (--encoder: also re-encodes the video)
+   cd ../analysis
+   python3 -m sensors_rl data     # every file of data/sensors-rl/article/ in turn
    ```
 
-5. The tables and figures, from `article/src/data/` alone: no simulation is
-   needed from here on. Each table tool writes, under `article/src/tables/`,
-   the article's tables and their French counterparts, their names starting
-   with `en_` and `fr_`; the figure tools write `article/src/figures/`.
+   `--only NAME` compiles one file: `comparative` (with `fire-map-F1.tsv` to
+   `F3`), `revision`, `round2`, `frames`, `oracle` (`oracle-s10.tsv`),
+   `agent-trace`, `break-agent`, `break-cases`, `methods`
+   (`methode-mesures.tsv`), `codec` (`codec-frames.tsv`, re-encoding the
+   video) and `overhead`. Without all the sets of `0-comparative` and
+   `1-round1` on disk, every step but `revision` and `round2` refuses, and the
+   stored file stays.
+
+5. The tables and figures, from `data/sensors-rl/article/` and the results
+   of the three studies alone: no simulation is needed from here on. The
+   `tables` step writes, under `article/tables/`, the article's tables and
+   their French counterparts, their names starting with `en_` and `fr_`; the
+   `figures` step writes `article/figures/`.
 
    ```bash
-   mkdir -p ../src/tables ../src/figures
-   python3 make_tables_plan.py
-   python3 make_tables_comparative.py
-   python3 make_tables_revision.py
-   python3 make_tables_ablation.py
-   python3 make_tables_quality.py
-   python3 make_tables_volume.py
-   python3 make_tables_charge.py
-   python3 make_tables_sensibilite.py
-   python3 make_tables_generalisation.py
-   python3 make_tables_overhead.py
-   python3 make_figures.py --lang en
-   python3 make_figure_trajectories.py --lang en
+   mkdir -p ../../article/tables ../../article/figures
+   python3 -m sensors_rl tables
+   python3 -m sensors_rl figures --lang en
    ```
+
+6. The statistics behind them and behind the text, printed, all or one by one
+   (`--only NAME`), then every number of the text, recomputed:
+
+   ```bash
+   python3 -m sensors_rl report
+   python3 -m sensors_rl claims
+   ```
+
+   | `--only` | What it prints | Module |
+   |---|---|---|
+   | `comparative` | the main study (E0): the means of each cell, the paired gaps, the analyses of variance | `sensors_rl/analysis/comparative.py` |
+   | `quality` | the images, the delay and the deadlines of the main study | `sensors_rl/analysis/quality.py` |
+   | `controls` | E1 and E3, the implementation of AOMDV and the adaptation of the agents | `sensors_rl/analysis/controls.py` |
+   | `ablation` | E2, the agents one by one | `sensors_rl/analysis/ablation.py` |
+   | `coding` | E4, the equal rate and the coefficient 0.1 | `sensors_rl/analysis/coding.py` |
+   | `robustness` | E5, the load, the fire and the scenario | `sensors_rl/analysis/robustness.py` |
+   | `overhead` | the costs for a sensor node | `sensors_rl/analysis/overhead.py` |
+   | `plan` | the plan and the families of Holm's correction | `sensors_rl/tables/plan.py` |
+   | `round2` | the controls of the second round, the learned configurations and the fixed settings | `sensors_rl/analysis/round2.py` |
+   | `assumptions` | the assumptions of the tests: normality, sphericity, rank tests | `sensors_rl/analysis/assumptions.py` |
+   | `access-robustness` | the access-only stack in the series of E4 and E5 | `sensors_rl/analysis/access_robustness.py` |
 
 ### Each table of the revised article
 
-| Table | Generated by | Statistics printed by |
+| Table | Generated by | Statistics printed by (`python3 -m sensors_rl`) |
 |---|---|---|
 | 1, Network and simulation parameters, and factors of the main study E0 | written in the article | |
 | 2, Parameters of the EvalVSN tool | written in the article | |
 | 3, Three fires; camera at (0, 0) m, sink at (360, 360) m | written in the article | |
-| 4, The agents and the rules they replace | written in the article | |
+| 4, Agents and the rules they replace | written in the article | |
 | 5, Metrics used in the results | written in the article | |
-| 6, Experimental plan, twenty simulations per stack, fire, GOP and factor level | `make_tables_plan.py` |  |
-| 7, PSNR at the sink, mean ± half-width of the 95% confidence interval | `make_tables_comparative.py` | `analyse_comparative.py` |
-| 8, Ablations at GOP 9-3: agent minus its rule, means over 60 seeds | `make_tables_ablation.py` | `analyse_ablation.py` |
-| 9, Agent decisions at GOP 9-3, means per simulation | `make_tables_revision.py` |  |
-| 10, Controls at GOP 9-3, means over 60 seeds | `make_tables_revision.py` | `analyse_revision.py` |
-| 11, Paired PSNR differences between the cross-layer stacks, means per cell | `make_tables_comparative.py` | `analyse_comparative.py` |
-| 12, Usable images, delay and missed deadlines of the four stacks, means over 60 seeds | `make_tables_quality.py` | `make_tables_quality.py --stats` |
-| 13, Repeated-measures analysis of the PSNR, 540 simulations over 60 seeds | `make_tables_comparative.py` | `analyse_comparative.py` |
-| 14, GOP at T = 9 s and at equal rate, means over 60 seeds, T denoting the alarm period | `make_tables_volume.py` | `analyse_claims.py`, rows P26, the tests at equal rate |
-| 15, Quality coefficient (0.01 or 0.1) at GOP 9-3, means over 60 seeds | `make_tables_volume.py` | `analyse_qualite.py`, the tests of the coefficient 0.1 |
-| 16, Alarm period T at GOP 9-3, means over 60 seeds | `make_tables_charge.py` |  |
-| 17, Fire parameters at GOP 9-3, means over 60 seeds | `make_tables_sensibilite.py` | `analyse_sensibilite.py` |
-| 18, Scenario variants at GOP 9-3, means over 60 seeds, reference: fire video, 40 m grid | `make_tables_generalisation.py` | `analyse_generalisation.py` |
-| 19, Energy, control messages and memory at GOP 9-3, means per simulation over 60 seeds | `make_tables_overhead.py` | `make_tables_overhead.py` |
+| 6, Experimental plan: twenty simulations per stack, fire, GOP and factor level, and one per development run | `sensors_rl/tables/plan.py` | `report --only plan` |
+| 7, Families of the Holm correction | `sensors_rl/tables/plan.py` | `report --only plan` |
+| 8, PSNR at the sink, mean ± half-width of the 95% confidence interval | `sensors_rl/tables/comparative.py` | `report --only comparative` |
+| 9, Ablations at GOP 9-3: agent minus its rule, means over 60 seeds, with the 95% confidence interval in brackets | `sensors_rl/tables/ablation.py` | `report --only ablation` |
+| 10, Agent decisions at GOP 9-3, means per simulation | `sensors_rl/tables/controls.py` |  |
+| 11, Controls at GOP 9-3, means over 60 seeds | `sensors_rl/tables/controls.py` | `report --only controls` |
+| 12, Paired PSNR differences by cell, with the 95% confidence interval in brackets and, for E0, the corrected p (Table 7); the access-only stack is tested by GOP (Section 3.3) | `sensors_rl/tables/comparative.py` | `report --only comparative` |
+| 13, Images that meet the PSNR threshold, delay, missed deadlines and packets received in time, means over 60 seeds | `sensors_rl/tables/quality.py` | `report --only quality` |
+| 14, Repeated-measures analysis of the PSNR, 540 simulations over 60 seeds, with the 95% confidence interval in brackets; dash: between-seed term, to which the correction does not apply | `sensors_rl/tables/comparative.py` | `report --only comparative` |
+| 15, GOP at T = 9 s and at equal rate, means over 60 seeds; T: alarm period | `sensors_rl/tables/coding.py` | `claims`, rows P26, the tests at equal rate |
+| 16, Quality coefficient (0.01 or 0.1) at GOP 9-3, means over 60 seeds | `sensors_rl/tables/coding.py` | `report --only coding`, the tests of the coefficient 0.1 |
+| 17, Alarm period T at GOP 9-3, means over 60 seeds, with the 95% confidence interval in brackets; differences for the access-only stack: Section 3.8 | `sensors_rl/tables/robustness.py` | `report --only robustness`, `report --only access-robustness` |
+| 18, Fire parameters at GOP 9-3, means over 60 seeds, with the 95% confidence interval in brackets; differences for the access-only stack: Section 3.8 | `sensors_rl/tables/robustness.py` | `report --only robustness`, `report --only access-robustness` |
+| 19, Scenario variants at GOP 9-3, means over 60 seeds, with the 95% confidence interval in brackets; reference: fire video, 40 m grid; differences for the access-only stack: Section 3.8 | `sensors_rl/tables/robustness.py` | `report --only robustness`, `report --only access-robustness` |
+| 20, Energy, control messages and memory at GOP 9-3, means per simulation over 60 seeds | `sensors_rl/tables/overhead.py` | `report --only overhead` |
 
 ### Each figure of the revised article
 
 | Figure | Drawn by |
 |---|---|
 | 1, Video surveillance of a forest fire by a wireless sensor network | a drawing (TikZ or UML), not part of this release |
-| 2, The three fires 90 s after detection, in the first simulation of the rule stack | `make_figures.py` |
-| 3, Admission region of the early discard as a function of the congestion index IC and the normalized rank of the packet, for the threshold IC_0 of the rule and the other finite thresholds the agent can choose | `make_figures.py` |
-| 4, The cross-layer stack extended from Ad hoc On-demand Multipath Distance Vector (AOMDV) routing, named AOMDV Quality Prioritized Video (AOMDV_QPV) | a drawing (TikZ or UML), not part of this release |
+| 2, The three fires 90 s after detection, in the first simulation with the rule stack | `sensors_rl/figures/methods.py` |
+| 3, Admission region of the early discard versus the congestion index IC and the normalized rank, for the rule's threshold IC_0 and the agent's other finite thresholds | `sensors_rl/figures/methods.py` |
+| 4, Cross-layer stack extended from AOMDV, named AOMDV Quality Prioritized Video (AOMDV_QPV) | a drawing (TikZ or UML), not part of this release |
 | 5, Unified Modeling Language (UML) class diagram of the agents | a drawing (TikZ or UML), not part of this release |
-| 6, Learning trajectories of the agents at GOP 9-3 | `make_figure_trajectories.py` |
-| 7, PSNR at the sink of the four stacks by GOP and fire | `make_figures.py` |
-| 8, Loss of the M1 level of the four stacks by GOP and fire | `make_figures.py` |
-| 9, Image 8 of the first simulation under F1 at GOP 9-3 | `make_figures.py` |
+| 6, Learning trajectories of the agents at GOP 9-3 | `sensors_rl/figures/results.py` |
+| 7, PSNR at the sink for the four stacks of E0, by GOP and fire | `sensors_rl/figures/results.py` |
+| 8, Loss of the M1 level for the four stacks of E0, by GOP and fire | `sensors_rl/figures/results.py` |
+| 9, Image 8 of the first simulation under F1 at GOP 9-3 | `sensors_rl/figures/results.py` |
 
-`analyse_claims.py` recomputes every other number the results section quotes,
-from `article/src/data/`, and prints for each the value the text writes, the
-value computed and whether they agree; it then runs
-`analyse_claims_generalisation.py` (the scenario series of E5) and
-`analyse_claims_aomdv.py` (the tuned AOMDV series of E1), whose lines read
-the same way. Their labels are in French, and their numbers carry a decimal
-comma; the numbers are those of the article. Five lines of
-`analyse_claims_aomdv.py` print MISSING (A09 to A11): they need the simulation
-sets themselves (`PROGRESS.txt`) or an energy of tuned AOMDV that
-`overhead.tsv` does not hold. The article prints one of their numbers, the
-180 simulations of AOMDV with cross-layer timers, which `revision.tsv`
-counts (arm `pq-tuned`).
+`python3 -m sensors_rl claims` recomputes every other number the text
+quotes, from `data/sensors-rl/`, and prints for each the value the
+text writes, the value computed and whether they agree: the results
+(`claims/results.py`), then the scenario series of E5 (`claims/scenario.py`),
+the tuned AOMDV series of E1 (`claims/aomdv.py`) and what the second review
+round adds (`claims/review.py`, with the controls in `claims/round2.py`, the
+forms the abstract, the introduction, the discussion and the conclusions give
+in `claims/synthesis.py` and the access-only stack in E4 and E5 in
+`claims/access_robustness.py`). Their labels
+are in French, and their numbers carry a decimal comma; the numbers are those
+of the article. The same step also looks for each written value in the
+article's French text, which this repository does not hold: it says so
+("sources absentes, non lues") and checks the values alone.
 
-`make_tables_overhead.py` reads the size of the agents' tables from the
-simulator's headers: from ns-2.35 if it is unpacked at
-`../ns-2/ns-allinone-2.35/ns-2.35/` beside the repository, else from
-`ns-2-modules/`.
+`sensors_rl/analysis/overhead.py` reads the size of the agents' tables from
+the simulator's headers, under `code/ns2/modules/ns-2.35/`.
 
 ## License
 
@@ -414,15 +464,15 @@ The licenses go by directory:
 
 | Directory | License |
 |---|---|
-| `evalvsn/` (the EvalVSN tool), `experiments/` but its `results/`, `article/tools/` | GNU General Public License, version 3 (`LICENSE`) |
-| `ns-2-modules/`, the 9 files written by the authors (`SPDX-License-Identifier: GPL-2.0-or-later` in their header) | GNU General Public License, version 2 or any later version (`ns-2-modules/LICENSE-GPL-2.0`), so that they combine with the GPL version 2 of AOMDV, with which they are compiled |
-| `ns-2-modules/`, the 31 files that come from ns-2.35 or derive from it, AOMDV and AOMDV_QPV among them | their original license, as the notices of their headers state it; `ns-2-modules/README.md` lists each file by license |
-| `experiments/studies/*/results/`, `article/src/data/` and the tables the tools generate from them | Creative Commons Attribution 4.0 International (`LICENSE-data`), except the frames of `article/src/data/galerie/`, decoded from a FLAME 2 video, which keep the dataset's terms |
-| `article/src/figures-src/icons/` | the Twemoji pictograms, by Twitter, Inc and other contributors, under CC BY 4.0 (`LICENSE-GRAPHICS` beside them) |
+| `code/` (the EvalVSN tool, the scripts, `code/ns2/build.sh` and the article's package) but `code/ns2/modules/`; the `sets.txt` and `README.md` of each study under `data/sensors-rl/` | GNU General Public License, version 3 (`LICENSE`) |
+| `code/ns2/modules/`, the 9 files written by the authors (`SPDX-License-Identifier: GPL-2.0-or-later` in their header) | GNU General Public License, version 2 or any later version (`code/ns2/LICENSE-GPL-2.0`), so that they combine with the GPL version 2 of AOMDV, with which they are compiled |
+| `code/ns2/modules/`, the 31 files that come from ns-2.35 or derive from it, AOMDV and AOMDV_QPV among them | their original license, as the notices of their headers state it; `code/ns2/README.md` lists each file by license |
+| `data/sensors-rl/*/results/`, `data/sensors-rl/2-round2/policies/`, `data/sensors-rl/article/` and the tables the tools generate from them | Creative Commons Attribution 4.0 International (`LICENSE-data`), except the frames of `data/sensors-rl/article/galerie/`, decoded from a FLAME 2 video, which keep the dataset's terms |
+| `article/figures-src/icons/` | the Twemoji pictograms, by Twitter, Inc and other contributors, under CC BY 4.0 (`LICENSE-GRAPHICS` beside them) |
 
 ## Citation
 
-This release, v2.0.5, is archived at Zenodo. All its versions share the
+This release, v2.1.0, is archived at Zenodo. All its versions share the
 concept DOI [10.5281/zenodo.24147853](https://doi.org/10.5281/zenodo.24147853), which
 leads to the latest one; the Zenodo record of each version gives the DOI of
 that version.
