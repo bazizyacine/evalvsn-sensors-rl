@@ -124,8 +124,8 @@ def claims(C):
     ar = round2.access_gops('access - rules')
     span('PSNR, pile à accès seul − pile à règles, trois GOP : min., max. ; Holm max. ; bornes min. et max. (résumé, introduction, '
          'discussion, conclusions)',
-         'Sur trois feux simulés réunis, à chacun de trois codages, la première relève le rapport signal sur bruit de crête de 1,06 à 2,00 dB '
-         '(intervalles de 0,37 à 2,62 dB, p ≤ 0,004 … cet agent en relève le PSNR aux trois GOP (+1,06 à +2,00 dB, intervalles de 0,37 à 2,62 dB, p ≤ 0,004 … La pile à accès seul '
+         'sur trois feux simulés réunis, à chacun de trois codages, la première relève le rapport signal sur bruit de crête de 1,06 à 2,00 dB '
+         '(intervalles de confiance à 95 % de 0,37 à 2,62 dB, p ≤ 0,004 … cet agent en relève le PSNR aux trois GOP (+1,06 à +2,00 dB, intervalles de 0,37 à 2,62 dB, p ≤ 0,004 … La pile à accès seul '
          'dépasse la pile à règles aux trois GOP (+1,06 à +2,00 dB, intervalles de 0,37 à 2,62 dB, p ≤ 0,004 … La pile à accès seul '
          'dépasse la pile à règles aux trois GOP',
          list(ar.values()), '1,06 à 2,00 dB, p ≤ 0,004', '0,37 à 2,62 dB',
@@ -138,22 +138,65 @@ def claims(C):
          'intervalles de 1,53 à 2,88 dB, p < 0,001',
          list(ls.values()), '2,02 à 2,33 dB, p < 0,001', '1,53 à 2,88 dB',
          also=[(max(ar, key=lambda s: ar[s].mean) == '9M3D' and all(significant(e) for e in ls.values()), '=', True, 0)])
+    # the period of the main comparison and the one where its lead reverses at
+    # GOP 9-3, the GOP of the largest gain (S14 checks the load series)
+    e0 = sorted({sets.keys(n)[3:] for n in plan.names(paths.study(paths.STUDY_E0, 'sets.txt'))})   # (period, grid) of E0
+    load = access_series.families()['load', 'access - rules']
+    reversed_ = [p for p, e in load.items() if significant(e, -1)] or ['p0']
+    claim('PSNR, pile à accès seul − pile à règles : période d\'alarme de E0 et de cette comparaison (s) ; au GOP du gain maximal, la '
+          'seule période où elle passe sous la pile à règles, Holm sur cinq périodes (s) (résumé)',
+          'À une image toutes les 9 s, sur trois feux simulés réunis … et son avance s\'inverse à 7 s',
+          [(float(e0[0][0][1:]), '=', 9, 0), (float(reversed_[0][1:]), '=', 7, 0),
+           (len(e0) == 1 and len(reversed_) == 1 and access_series.REFERENCE.period == e0[0][0]
+            and abs(load[e0[0][0]].mean - ar['9M3D'].mean) < 1e-9, '=', True, 0)])
     la = list(round2.learned_csma('rules', 'agent').values())
     span('PSNR, configurations figées de la pile à accès seul − l\'agent qui apprend, GOP 9-3 : min., max. ; Holm min. ; bornes min. et '
          'max. (discussion)',
          '+0,02 à +0,34 dB, intervalles de −0,45 à +0,77 dB, p ≥ 0,46', la, '+0,02 à +0,34 dB, p ≥ 0,46', '−0,45 à +0,77 dB',
          also=[(all(e.holm >= 0.05 for e in la), '=', True, 0)])
+    # the four fixed, uniform settings of before the learned configurations (round2.fixed_csma): against the
+    # standard's setting, the largest in the access-only stack; each below the gain of
+    # the agent in its stack, and each below the learning agent (single tests, S08)
+    fixed = {(st, ref): list(round2.fixed_csma(st, ref).values()) for st in ('rules', 'hybrid') for ref in ('standard', 'agent')}
+    agent_gain = {'rules': ar['9M3D'], 'hybrid': stats.paired(round2.values('hybrid', 'psnr'), round2.values('hybrid-noA', 'psnr'))}
+    claim('PSNR, quatre réglages CSMA/CA fixes − les paramètres de la norme, GOP 9-3 : le plus grand, pile à accès seul (dB) ; dans chaque '
+          'pile, tous sous le gain de l\'agent et sous l\'agent qui apprend (p < 0,05, tests uniques) ; configurations figées − l\'agent, '
+          'aucun Holm < 0,05 (discussion)',
+          'Un réglage uniforme ne retrouve donc qu\'une partie du gain de l\'agent (jusqu\'à +0,71 dB dans la pile à accès seul … Au GOP '
+          '9-3, le gain entier n\'a été atteint qu\'avec des paramètres appris pour chaque nœud et chaque état',
+          [(max(e.mean for e in fixed['rules', 'standard']), '=', 0.71, 2),
+           (all(max(e.mean for e in fixed[st, 'standard']) < agent_gain[st].mean and significant(agent_gain[st])
+                and all(e.mean < 0 and e.p < 0.05 for e in fixed[st, 'agent']) for st in agent_gain), '=', True, 0),
+           (all(e.holm >= 0.05 for e in la), '=', True, 0)])
     lh = round2.learned_csma('hybrid', 'agent')
     gap('PSNR, configuration k4 figée de la pile hybride − l\'agent qui apprend, GOP 9-3, Holm sur quatre : la seule des quatre sous '
         'l\'agent avec Holm < 0,05 (limites)',
         'une configuration figée sur quatre passe sous l\'agent qui apprend (−2,06 dB [−2,45 ; −1,66], p < 0,001', lh[4],
         also=[(len(lh) == 4 and [k for k, e in lh.items() if significant(e, -1)] == [4], '=', True, 0)])
+    ld = list(round2.learned_csma('rules', 'agent', 'declared').values())
+    span('voisins déclarés morts par simulation, configurations figées de la pile à accès seul − l\'agent qui apprend, GOP 9-3, tests '
+         'uniques : min., max. ; p max. ; bornes min. et max. ; toutes au-dessous (limites)',
+         'ses configurations apprises, figées sans exploration pendant la mission, les réduisent davantage que l\'agent qui apprend dans la '
+         'pile à accès seul (−4,1 à −1,9 par simulation, intervalles de −5,0 à −0,8, p ≤ 0,002, tests uniques',
+         ld, '−4,1 à −1,9 par simulation, p ≤ 0,002', '−5,0 à −0,8',
+         also=[(len(ld) == 4 and all(e.holm is None and significant(e, -1) for e in ld), '=', True, 0)])
     ha = round2.access_gops('hybrid - access')
     span('PSNR, pile hybride − pile à accès seul, trois GOP : min., max. ; Holm min. ; bornes min. et max. (résumé, introduction, '
          'discussion, conclusions)',
          '−0,23 à +0,02 dB, intervalles de −0,66 à +0,69 dB, p ≥ 0,84 … −0,23 à +0,02 dB (intervalles de −0,66 à +0,69 dB, p ≥ 0,84',
          list(ha.values()), '−0,23 à +0,02 dB, p ≥ 0,84', '−0,66 à +0,69 dB',
          also=[(len(ha) == 3 and all(e.holm >= 0.05 for e in ha.values()), '=', True, 0)])
+    claim('pile retenue par la règle de choix, dans son domaine : période d\'alarme (s) et espacement de la grille (m) de E0, où la perte '
+          'du niveau M1 est comparée ; pile hybride − pile à accès seul, aucun Holm < 0,05 aux trois GOP (discussion, conclusions)',
+          'À T = 9 s, la pile hybride conserve aussi cette protection … À T = 9 s, sur la grille de 40 m et au coefficient de qualité 0,01, '
+          'la pile à accès seul est donc retenue',
+          [(float(e0[0][0][1:]), '=', 9, 0), (float(e0[0][1]), '=', 40, 0),
+           (len(e0) == 1 and all(e.holm >= 0.05 for e in ha.values()), '=', True, 0)])
+    # the coefficient 0.1, measured at GOP 9-3 alone (its sets in studies 10 and 11)
+    coded = {sets.keys(n)[2] for study in (paths.STUDY_R1, paths.STUDY_R2) for n in plan.names(paths.study(study, 'sets.txt'))
+             if 'GC-QC-0p1' in n}
+    claim('série au coefficient de qualité 0,1 : le GOP de tous ses jeux (introduction)',
+          'Au GOP 9-3 et au coefficient 0,1, la pile hybride dépasse la pile à accès seul', [(coded == {'9M3D'}, '=', True, 0)])
     # the memory the agents take on a node (analysis/overhead.memory, which
     # P43 checks in 3.9), one agent against six
     _, mem = overhead.memory()
@@ -186,7 +229,8 @@ def claims(C):
         'gagne 1,55 dB ([1,04 ; 2,05], p < 0,001 … elle gagne aussi au GOP 9-3 (+1,55 dB [1,04 ; 2,05], p < 0,001', controls.decay()['agents'])
     claim('PSNR, agent de détection de rupture seul sur la pile à règles, Holm sur sept : le seul agent sous sa règle avec Holm < 0,05, '
           'seul et dans la pile hybride (conclusions)',
-          'Son agent est le seul à y abaisser le PSNR (−1,42 dB [−2,08 ; −0,75] seul sur la pile à règles, p < 0,001',
+          'cet agent, ajouté seul à la pile à règles, est le seul dont une baisse statistiquement significative du PSNR ait été détectée à ce '
+          'GOP (−1,42 dB [−2,08 ; −0,75], p < 0,001',
           gap_checks(alone['B'], '−1,42 dB [−2,08 ; −0,75], p < 0,001')
           + [([x for x, e in alone.items() if significant(e, -1)] == ['B'] and [x for x, e in inside.items() if significant(e, -1)] == ['B'],
               '=', True, 0)])
@@ -216,6 +260,14 @@ def claims(C):
          '(discussion)',
          '+0,14 à +0,51 dB, intervalles de −0,24 à +1,09 dB, p ≥ 0,071', under, '+0,14 à +0,51 dB, p ≥ 0,071', '−0,24 à +1,09 dB',
          also=[(all(e.holm >= 0.05 for e in under), '=', True, 0)])
+    claim('PSNR, agent de détection de rupture sans exploration − pile hybride : seul le GOP 6-6 a l\'intervalle sans zéro, Holm ≥ 0,05 '
+          '(discussion, conclusions)',
+          'Quand l\'agent de détection de rupture n\'explore pas (\\varepsilon = 0), aucune différence statistiquement significative n\'a été '
+          'détectée entre elles, aux trois GOP (+0,14 à +0,51 dB, intervalles de −0,24 à +1,09 dB, p ≥ 0,071). L\'intervalle du GOP 6-6 '
+          'exclut toutefois zéro … Avec \\varepsilon = 0 pour cet agent, aucune différence statistiquement significative n\'a été détectée '
+          'entre les piles à agents et hybride, à aucun GOP (+0,14 à +0,51 dB, intervalles de −0,24 à +1,09 dB, p ≥ 0,071). L\'intervalle '
+          'du GOP 6-6 exclut toutefois zéro',
+          [(sorted(s for s, e in greedy['hybrid'].items() if round2.flagged(e)) == ['6M6D'], '=', True, 0)])
     frozen = stats.paired(quality.values('agents-frozen', 'psnr', '9M3D'), quality.values('hybrid-frozen', 'psnr', '9M3D'))
     gap('PSNR, pile à agents − pile hybride sans apprentissage ni exploration, GOP 9-3, test unique (discussion, conclusions)',
         '+0,15 dB [−0,42 ; 0,71], p = 0,60', frozen)
@@ -223,11 +275,13 @@ def claims(C):
         ('constant', {s: stats.paired(quality.values('agents', 'psnr', s), quality.values('hybrid', 'psnr', s)) for s in SPLITS}),
         ('decaying', decay['hybrid']), ('none', greedy['hybrid']), ('frozen', {'9M3D': frozen}))}
     claim('PSNR, agent de détection de rupture − la règle : les GOP où la règle est au-dessus, p ou Holm < 0,05 ; exploration constante '
-          '(E0, trois GOP), décroissante (GOP 9-3), nulle et pile figée (aucun)',
-          'Au GOP 9-3, elle reste pourtant sous la pile hybride … L\'avantage de la règle n\'a donc été détecté qu\'avec cette '
-          'exploration, persistante ou, au GOP 9-3, décroissante',
+          '(E0, trois GOP), décroissante seule (GOP 9-3), nulle et pile figée (aucun) ; au GOP 9-3, la pile hybride au-dessus de la pile à '
+          'agents dont les sept agents ont une exploration décroissante, Holm sur trois (discussion, conclusions)',
+          'Dans les deux cas, elle reste sous la pile hybride au GOP 9-3 … L\'avantage de la règle n\'a donc été détecté qu\'avec cette '
+          'exploration, persistante ou, au GOP 9-3, décroissante … La déclaration d\'un voisin mort gagne donc à rester une règle, mais cet '
+          'avantage n\'a été détecté qu\'en présence de l\'exploration de son agent',
           [(lead == {'constant': sorted(SPLITS), 'decaying': ['9M3D'], 'none': [], 'frozen': []}, '=', True, 0),
-           (all(significant(e) for e in ah.values()), '=', True, 0)])
+           (all(significant(e) for e in ah.values()) and significant(controls.decayed_agents()['hybrid']), '=', True, 0)])
     # its table and its decisions in the traced runs, GOP 9-3 (break-agent.tsv)
     pick, best, declared = ({k: controls.brk('agents', '%s%d' % (c, k)) for k in controls.COUNTS} for c in ('pick', 'best', 'decl'))
     claim('agent de détection de rupture : couples où trois échecs ont la plus grande valeur, sur le total, pas tous (résumé, '
@@ -240,7 +294,7 @@ def claims(C):
           'discussion, conclusions)',
           'Les actions explorées d\'un seul échec, 2,4 % de ses décisions, produisent pourtant 70 % des déclarations que ses compteurs '
           'enregistrent … 70 % des déclarations que ses compteurs enregistrent dans la pile à agents viennent d\'actions explorées d\'un '
-          'seul échec … Son exploration persistante d\'un seul échec produit 70 % des déclarations que ses compteurs enregistrent',
+          'seul échec … et son exploration persistante d\'un seul échec produit 70 % des déclarations que ses compteurs enregistrent',
           [(100 * pick[1] / sum(pick.values()), '=', 2.4, 1), (100 * declared[1] / sum(declared.values()), '=', 70, 0)])
 
     # --------------------------------------------------- the hybrid stack

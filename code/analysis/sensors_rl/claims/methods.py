@@ -16,15 +16,22 @@ image and the equal-rate periods P37, P39 and P40, claims/results.py):
                 simulator's sources; the bound of the two link profiles
   the video     the packets, the bytes and the energies of the coded frames
                 (codec-frames.tsv, methode-mesures.tsv)
-  the pairing   the calendars of failures per seed"""
+  the pairing   the calendars of failures per seed
+  the seeds     E0 without the ten seeds of the preliminary trial, and its
+                interim analysis: the intervals at ten seeds per fire, the
+                ten added seeds alone
+  the rule      the stack the choice rule of 2.6 retains at each level of
+                the series of E4 and E5, inside and outside its domain"""
 import math
 import os
 import re
 
-from ..analysis import coding, comparative, overhead, robustness
+from ..analysis import access_robustness as access_analysis
+from ..analysis import coding, comparative, overhead, quality, robustness
+from ..analysis import round2 as round2_analysis
 from ..common import data, paths, stats
 from ..tables import plan
-from .checks import table
+from .checks import gap_checks, range_checks, table
 
 FIRES, SPLITS, GOP = data.FIRES, data.SPLITS, data.GOP
 EXPONENT = 3.2          # the log-distance exponent of section 2.1 (sets.conf, shadowing:3.2:0)
@@ -252,3 +259,109 @@ def claims(C):
     claim('calendriers de pannes : graines, simulations, calendriers par graine',
           'Sur les 720 simulations, chacune des 60 graines donne un seul calendrier de pannes',
           [(calendar == '60 seeds over 720 runs, at most 1 schedule(s) per seed', '=', True, 0)])
+
+    # ---------------------------------------------------------- the seeds
+    # The conclusion of a test: 0 no difference detected (Holm's p within its
+    # family at 0.05), 1 above, -1 below.
+    def verdict(e):
+        return 0 if not stats.detected(e) else 1 if e.mean > 0 else -1
+
+    # The preliminary trial of the link-break agent: ten simulations under F1
+    # at GOP 9-3, on the seeds r01 to r10 that E0 reuses (section 2.6, the
+    # article's own account of it). Without them,
+    # each family of E0 (the per-GOP and per-cell families of
+    # analysis/assumptions.blocks) is recomputed, Holm within it as in E0.
+    rs = comparative.rows()
+    trial = {('F1', 'r%02d' % i) for i in range(1, 11)}
+    kept = [r for r in rs if not (r['split'] == '9M3D' and (r['fire'], r['realisation']) in trial)]
+
+    def e0(rows, drop):
+        """The families of E0 on rows, the trial's seeds dropped from GOP 9-3
+        of revision.tsv when drop: {(metric, a, b): {split: Estimate}}, then
+        {(a, b): {(fire, split): Estimate}}."""
+        psnr, m1 = comparative.cells(rows, 'psnr'), comparative.cells(rows, 'm1loss')
+        gops = {('psnr', a, b): comparative.paired_gops(psnr, a, b) for a, b in (('hybrid', 'rules'), ('agents', 'rules'), ('hybrid', 'agents'))}
+        gops['m1loss', 'hybrid', 'rules'] = comparative.paired_gops(m1, 'hybrid', 'rules')
+        for m, pairs in (('usable', (('hybrid', 'rules'), ('agents', 'rules'))), ('usable25', (('hybrid', 'rules'),)),
+                         ('usable31', (('hybrid', 'rules'),)), ('delay_mean', (('hybrid', 'rules'),)), ('late', (('hybrid', 'rules'),))):
+            for a, b in pairs:
+                gops[m, a, b] = stats.family({s: stats.paired({k: v for k, v in quality.values(a, m, s).items()
+                                                               if not (drop and s == '9M3D' and k in trial)},
+                                                              quality.values(b, m, s)) for s in SPLITS})
+        return gops, {(a, b): comparative.paired_cells(psnr, a, b) for a, b in comparative.PAIRS}
+
+    (full_gops, full_cells), (cut_gops, cut_cells) = e0(rs, False), e0(kept, True)
+    cell = ('F1', '9M3D')
+    hr = cut_cells['hybrid', 'rules'][cell]
+    claim('E0 sans les dix graines de l\'essai préliminaire (F1, GOP 9-3, r01 à r10) : conclusion de chaque test des dix familles par GOP, '
+          'signe des quatre écarts de la cellule F1 au GOP 9-3 ; écart hybride − règles de cette cellule, Holm sur neuf cellules, non détecté',
+          'Sans elles, les conclusions de E0 à ce GOP, sur les trois feux, ne changent pas. Dans la cellule F1 au GOP 9-3, il reste dix '
+          'graines, et les écarts gardent leur signe. Aucune différence statistiquement significative n\'y a été détectée entre les piles '
+          'hybride et à règles (+1,60 dB [0,38 ; 2,82], p = 0,078',
+          [(len(cut_gops) == 10 and len(cut_cells) == 4, '=', True, 0),
+           (all(verdict(full_gops[k][s]) == verdict(cut_gops[k][s]) for k in full_gops for s in SPLITS), '=', True, 0),
+           (all((full_cells[k][cell].mean > 0) == (cut_cells[k][cell].mean > 0) for k in full_cells), '=', True, 0),
+           (hr.n == 10 and verdict(hr) == 0 and verdict(full_cells['hybrid', 'rules'][cell]) == 1, '=', True, 0)]
+          + gap_checks(hr, '+1,60 dB [0,38 ; 2,82], p = 0,078'))
+
+    # The interim analysis of E0: its sets ran with ten seeds per fire (r01 to
+    # r10), then were completed to twenty (data/sensors-rl/0-comparative,
+    # "Size"); the ten added seeds alone (r11 to r20), hybrid - rules per GOP
+    # over the three fires, Holm over the three GOPs as in E0.
+    ten = [r for r in rs if int(r['realisation'][1:]) <= 10]
+    added = [r for r in rs if int(r['realisation'][1:]) > 10]
+    widths = {k: comparative.half_width(v.values()) for k, v in comparative.cells(ten, 'psnr').items()}
+    claim('E0 à dix graines par feu (r01 à r10) : demi-largeur de l\'intervalle à 95 % d\'une moyenne de cellule, quatre piles, neuf '
+          'cellules : min., max. (dB, à l\'unité)',
+          'l\'intervalle d\'une moyenne de cellule valait \\pm 1 à \\pm2 dB',
+          [(len(widths) == 36 and all(len(v) == 10 for v in comparative.cells(ten, 'psnr').values()), '=', True, 0),
+           (min(widths.values()), '=', 1, 0), (max(widths.values()), '=', 2, 0)])
+    for metric, name, written in (
+            ('psnr', 'PSNR (dB)', 'L\'écart de PSNR va de +1,63 à +1,99 dB (intervalles de 0,92 à 2,98 dB, p < 0,001'),
+            ('m1loss', 'perte du niveau M1 (points)',
+             'Celui de la perte M1 va de −10,4 à −4,3 points (intervalles de −16,3 à −0,5 point, p ≤ 0,029')):
+        es = comparative.paired_gops(comparative.cells(added, metric), 'hybrid', 'rules')
+        whole = comparative.paired_gops(comparative.cells(rs, metric), 'hybrid', 'rules')
+        claim('E0, les dix graines ajoutées seules (r11 à r20), %s, pile hybride − règles, Holm sur trois GOP : écarts min., max. ; p max. ; '
+              'bornes ; la conclusion de chaque GOP, celle des vingt graines' % name,
+              'Les graines ajoutées, seules, donnent les mêmes conclusions pour la pile hybride face à la pile à règles à chaque GOP … '
+              + written,
+              range_checks(list(es.values()), written)
+              + [(all(e.n == 30 for e in es.values()), '=', True, 0),
+                 (all(verdict(es[s]) == verdict(whole[s]) != 0 for s in SPLITS), '=', True, 0)])
+
+    # ----------------------------------------------------------- the rule
+    # The choice rule of 2.6: the access-only stack is retained over the rule
+    # stack if its PSNR gain is detected (Holm within its series, the
+    # coefficient 0.1 a single test), then the hybrid stack over the stack so
+    # retained if its own gain is; otherwise the simpler stack. Its domain is
+    # T = 9 s on the 40 m grid, at the three GOPs and the coefficient 0.01:
+    # the load series at 9 s, the fire variants, the scenario variants but the
+    # 30 m grid, and E2 at the three GOPs.
+    fam = access_analysis.families()
+    over_rules = dict(robustness.period_family('hybrid', 'rules', 'psnr'))
+    over_rules.update(robustness.scenario_family('gap', 'hybrid-rules', 'psnr'))
+
+    def gain(e):
+        return e is not None and verdict(e) == 1
+
+    def retained(series, key):
+        if gain(fam[series, 'access - rules'][key]):
+            return 'hybrid' if gain(fam[series, 'hybrid - access'][key]) else 'access'
+        e = over_rules.get(key) if series in ('load', 'scenario') else None
+        return None if e is None else 'hybrid' if gain(e) else 'rules'
+
+    levels = {(s, lv.key): lv for s, lvs in access_analysis.SERIES.items() for lv in lvs}
+    inside = [k for k, lv in levels.items() if lv.period == 'p9' and lv.dist == '40' and lv.variant != 'q01']
+    outside = {k: retained(*k) for k in levels if k not in inside}
+    e2 = {s: (round2_analysis.access_gops('access - rules')[s], round2_analysis.access_gops('hybrid - access')[s]) for s in SPLITS}
+    claim('règle de choix de 2.6 : pile retenue à chaque niveau des séries de E4 et E5 hors de son domaine (7, 12, 18 et 30 s ; grille de '
+          '30 m ; débit égal ; coefficient 0,1) ; la pile à accès seul dans le domaine (9 s, variantes du feu, quatre variantes du '
+          'scénario, E2 aux trois GOP)',
+          'Hors de ce domaine, elle retiendrait la pile à règles à 7, 18 et 30 s et sur la grille de 30 m, et la pile hybride au '
+          'coefficient 0,1',
+          [(outside == {('load', 'p7'): 'rules', ('load', 'p12'): 'access', ('load', 'p18'): 'rules', ('load', 'p30'): 'rules',
+                        ('scenario', 'j8'): 'rules', ('rate', '3M9D'): 'access', ('rate', '6M6D'): 'access',
+                        ('coding', 'q01'): 'hybrid'}, '=', True, 0),
+           (len(inside) == 12 and all(retained(*k) == 'access' for k in inside), '=', True, 0),
+           (all(gain(a) and not gain(h) for a, h in e2.values()), '=', True, 0)])

@@ -143,6 +143,6 @@ def claims(C):
     claim('S14', name + ' au coefficient 0,1, GOP 9-3, test unique : la pile hybride au-dessus, p non corrigé (résultats, limites, '
           'conclusions)',
           'Au coefficient 0,1, en revanche, la pile hybride dépasse la pile à accès seul %s non corrigé … Au coefficient 0,1, la pile '
-          'hybride dépasse cette pile %s … Au coefficient de qualité 0,1, la pile hybride dépasse la pile à accès seul %s … Au coefficient '
-          '0,1, la pile hybride dépasse la pile à accès seul %s' % ((text,) * 4),
+          'hybride dépasse cette pile %s … Au coefficient de qualité 0,1, la pile hybride dépasse la pile à accès seul %s … Au GOP 9-3 et '
+          'au coefficient 0,1, la pile hybride dépasse la pile à accès seul %s' % ((text,) * 4),
           gap_checks(h['coding']['q01'], text) + [(h['coding']['q01'].holm is None, '=', True, 0)])

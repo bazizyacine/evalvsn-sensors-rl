@@ -2,7 +2,7 @@
 
 Supporting material for the article *Reinforcement Learning Agents in a Cross-Layer Stack for Forest Fire Video Surveillance over Wireless Sensor Networks* (M. Y. Baziz, L. Sekhri
 and B. Kechar), in the second round of review at *Sensors* (MDPI). This
-release, v2.1.0, is the version of the manuscript revised for that round:
+release, v2.1.1, is the version of the manuscript revised for that round:
 the code that ran the simulations, the results of every simulation and the
 commands that reproduce them.
 
@@ -153,7 +153,7 @@ Table 2. Parameters of the EvalVSN tool.
 |---|---|
 | Videos | FLAME 2 (fire, forest before the burn, smoke), cut with FFmpeg 6.1.1; 176 × 144 grayscale pixels, 12 frames |
 | Encoder | Modified Moving Picture Experts Group (MMPEG), as implemented in EvalVSN |
-| Frame rate | 1 image per second, hence 12 of the 301 images extracted from the source, two of them identical, which runs at 25 images per second, that is, one in 26, every 1.04 s after a first interval of 1.00 s (one in 25, every 1.00 s, for the 300 images of the forest and smoke videos of the scenario variants, Section 2.7) |
+| Frame rate | 1 image per second, hence 12 of the 301 images extracted from the source, which runs at 25 images per second and whose first two images are identical: one in 26, every 1.04 s after a first interval of 1.00 s (one in 25, every 1.00 s, for the 300 images of the forest and smoke videos of the scenario variants, Section 2.7) |
 | Skip threshold | zero, no image skipped |
 | GOP coefficient GC | 0.01597, 0.02525 or 0.03, for GOP 3-9, 6-6 or 9-3, respectively; studied factor of E0; 0.01597 and 0.15671 give GOP 9-3 for the forest and smoke videos of the scenario variants |
 | Quality coefficient | 0.01, applied to the luminance table of the Joint Photographic Experts Group (JPEG) |
@@ -414,7 +414,7 @@ sums:
 | 6, Experimental plan: twenty simulations per stack, fire, GOP and factor level, and one per development run | `sensors_rl/tables/plan.py` | `report --only plan` |
 | 7, Families of the Holm correction | `sensors_rl/tables/plan.py` | `report --only plan` |
 | 8, PSNR at the sink, mean ± half-width of the 95% confidence interval | `sensors_rl/tables/comparative.py` | `report --only comparative` |
-| 9, Ablations at GOP 9-3: agent minus its rule, means over 60 seeds, with the 95% confidence interval in brackets | `sensors_rl/tables/ablation.py` | `report --only ablation` |
+| 9, Ablations at GOP 9-3: agent minus its rule, means over 60 seeds, with the 95% confidence interval in brackets; link-break detection in the hybrid stack: agents stack minus hybrid stack, with the p of its E0 family (Table 7) | `sensors_rl/tables/ablation.py` | `report --only ablation` |
 | 10, Agent decisions at GOP 9-3, means per simulation | `sensors_rl/tables/controls.py` |  |
 | 11, Controls at GOP 9-3, means over 60 seeds | `sensors_rl/tables/controls.py` | `report --only controls` |
 | 12, Paired PSNR differences by cell, with the 95% confidence interval in brackets and, for E0, the corrected p (Table 7); the access-only stack is tested by GOP (Section 3.3) | `sensors_rl/tables/comparative.py` | `report --only comparative` |
@@ -472,7 +472,7 @@ The licenses go by directory:
 
 ## Citation
 
-This release, v2.1.0, is archived at Zenodo. All its versions share the
+This release, v2.1.1, is archived at Zenodo. All its versions share the
 concept DOI [10.5281/zenodo.24147853](https://doi.org/10.5281/zenodo.24147853), which
 leads to the latest one; the Zenodo record of each version gives the DOI of
 that version.

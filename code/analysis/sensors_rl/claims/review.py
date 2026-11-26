@@ -146,9 +146,10 @@ def main():
     # analysis/assumptions.py, which holds every test of the text, its tables
     # and its figures
     A = assumptions.summary()
-    claim('S11', 'familles de Holm : lignes du tableau des familles ; familles qu\'elles comptent',
-          'donne les 62 familles en 20 lignes, une ligne valant une famille par comparaison ou mesure qu\'elle cite',
-          [(len(plan.FAMILIES), '=', 20, 0), (len(A['families']), '=', 62, 0)])
+    claim('S11', 'familles de Holm : lignes du tableau des familles ; familles qu\'elles comptent, plus d\'une pour certaines lignes',
+          'donne les 62 familles en 20 lignes. Sa dernière colonne donne le nombre de tests de chaque famille ; une ligne peut valoir '
+          'plusieurs familles',
+          [(len(plan.FAMILIES), '=', 20, 0), (len(A['families']), '=', 62, 0), (len(A['families']) > len(plan.FAMILIES), '=', True, 0)])
     sizes = [f.size for f in plan.FAMILIES]
     claim('S11', 'tableau des familles : nombre de tests de chaque ligne, dans l\'ordre',
           ' … '.join('& %d' % n for n in sorted(set(sizes), reverse=True)),
@@ -187,14 +188,41 @@ def main():
           'test unique',
           [(all(b.family is None and e.n == 60 and e.holm is None for b in A['blocks']
                 if b.title == 'each seed averaged over the three GOPs' for _, e in b.tests), '=', True, 0), (data.SEEDS, '=', 60, 0)])
-    claim('S11', 'Shapiro-Wilk à 0,05 : comparaisons rejetées, comparaisons à tester, rejets attendus',
-          'rejette cette normalité au seuil de 0,05 pour 60 des 304 comparaisons dont les différences ne sont pas toutes égales, contre 15,2 '
-          'attendues sous normalité',
-          [(len(A['rejected']), '=', 60, 0), (len(A['distinct']), '=', 304, 0), (assumptions.ALPHA * len(A['distinct']), '=', 15.2, 1)])
+    # the tests and the comparisons they cover: a comparison tested in several
+    # blocks (assumptions.same_comparison) counts once; the three of the power
+    # agent, every seed at the same difference, have no shape to test
+    shaped = [e for _, (label, e, *_) in A['tests'] if not assumptions.constant(e)]
+    places = [sum(assumptions.same_comparison(x, e) for x in shaped) for _, _, e, *_ in A['distinct']]
+    repeated = [n for n in places if n > 1]
+    claim('S11', 'tests, comparaisons distinctes (cinq testées à deux, trois ou quatre endroits), les trois de l\'agent de puissance à '
+          'différence constante ; Shapiro-Wilk à 0,05 : comparaisons rejetées, comparaisons à tester, rejets attendus',
+          'Les 325 tests couvrent 315 comparaisons distinctes, car cinq d\'entre elles sont testées à deux, trois ou quatre endroits. Les '
+          'trois comparaisons de l\'agent de puissance donnent la même différence pour chaque graine. Pour 60 des 312 autres, le test de '
+          'Shapiro-Wilk … rejette la normalité au seuil de 0,05, contre 15,6 rejets attendus sous normalité',
+          [(len(A['tests']), '=', 325, 0), (len(A['distinct']) + len(A['flat']), '=', 315, 0),
+           (sum(places) == len(shaped) and len(repeated) == 5 and min(repeated) == 2 and max(repeated) == 4, '=', True, 0),
+           (len(A['flat']) == 3 and all(label == 'power' for _, label, _ in A['flat']), '=', True, 0),
+           (len(A['rejected']), '=', 60, 0), (len(A['distinct']), '=', 312, 0), (assumptions.ALPHA, '=', 0.05, 2),
+           (assumptions.ALPHA * len(A['distinct']), '=', 15.6, 1)])
     claim('S11', 'Wilcoxon, Holm dans les mêmes familles : tests dont la conclusion change ; tests',
-          'change la conclusion de 4 des 317 tests, 262 en familles et 55 uniques',
-          [(len(A['differ']), '=', 4, 0), (len(A['tests']), '=', 317, 0), (A['family_tests'], '=', 262, 0),
-           (len(A['tests']) - A['family_tests'], '=', 55, 0)])
+          'change la conclusion de 5 des 325 tests, 262 en familles et 63 uniques',
+          [(len(A['differ']), '=', 5, 0), (len(A['tests']), '=', 325, 0), (A['family_tests'], '=', 262, 0),
+           (len(A['tests']) - A['family_tests'], '=', 63, 0)])
+    # the five tests whose conclusion Wilcoxon changes, in the order of the
+    # text: a fixed CSMA/CA setting of the access-only stack against the
+    # standard's (a single test of 3.3), F1 at GOP 6-6 (Table 12), the agents
+    # stack under decaying exploration (3.5), the forest video and the swap (3.8)
+    changed = {(b.title, label) for b, label, *_ in A['differ']}
+    claim('S11', 'Wilcoxon : les cinq tests dont la conclusion change (méthode)',
+          'L\'un compare un réglage CSMA/CA fixe de la pile à accès seul aux paramètres de la norme … Deux autres sont l\'écart hybride − '
+          'règles sous F1 au GOP 6-6 … sont la perte M1 avec la vidéo forêt et l\'écart agents − règles quand la caméra et le puits sont '
+          'échangés',
+          [(changed == {('the single tests of E2: PSNR outside the families, the other measures',
+                         'PSNR, fixed CSMA/CA be4nb5 on the rules stack - rules'),
+                        ('PSNR (dB), hybrid - rules, per cell (20 seeds)', 'F1, GOP 6-6'),
+                        ('PSNR (dB), the learning stacks - the access-only stack, decaying exploration', 'agents-edec'),
+                        ('M1 loss (points), scenario variants, gap hybrid-rules', 'forest'),
+                        ('PSNR (dB), scenario variants, gap agents-rules', 'swap')}, '=', True, 0)])
     an = A['anova']
     within = [x for x in an['normal'] if x[0] != 'seed means']
     seeds = next(x for x in an['normal'] if x[0] == 'seed means')
@@ -220,6 +248,11 @@ def main():
     claim('S11', 'Wilcoxon, Holm sur deux : pile à agents sous exploration décroissante − pile à accès seul, détecté',
           'et le test de Wilcoxon, corrigé dans la même famille, détecte cet écart (p = 0,020',
           [pv(agents, '= 0,020'), (agents < 0.05, '=', True, 0)])
+    fixed = next((e, h) for b, lb, e, pt, h, *_ in A['differ']
+                 if lb == 'PSNR, fixed CSMA/CA be4nb5 on the rules stack - rules')
+    claim('S11', 'Wilcoxon, test unique : réglage CSMA/CA fixe be4nb5 de la pile à accès seul − paramètres de la norme (dB), détecté',
+          'Le test de Wilcoxon détecte toutefois l\'écart de l\'un d\'eux (+0,50 dB, p = 0,025',
+          [(fixed[0].mean, '=', 0.50, 2), pv(fixed[1], '= 0,025'), (fixed[1] < 0.05, '=', True, 0)])
 
     # S12, section 2 (claims/methods.py); S07 to S10, study 11 (claims/round2.py); S13; S14
     methods.claims(C)

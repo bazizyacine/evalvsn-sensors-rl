@@ -76,7 +76,7 @@ def main():
           pair_checks(t, 2.04, 1.73, 2.34) + [pv(t['p'], '< 0,001')])
     gt = per_gop('pq-tuned', 'pq-ctl')
     text = '1,60 à 2,35 dB selon le GOP (intervalles de 1,21 à 2,83 dB, p < 0,001'
-    claim('A02', 'même écart par GOP : min., max. (dB) ; Holm max. ; bornes min. et max.', 'p < 0,001), de ' + text, range_checks(gt, text))
+    claim('A02', 'même écart par GOP : min., max. (dB) ; Holm max. ; bornes min. et max.', 'p < 0,001, test unique), de ' + text, range_checks(gt, text))
 
     # A04, the size of the tuned AOMDV series
     claim('A04', 'simulations d\'AOMDV aux temporisations inter-couches ; moyennes sur 60 graines = moyennes sur 180 simulations', 'dans ses 180 simulations',

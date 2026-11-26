@@ -228,7 +228,7 @@ def main():
           'La pile à agents envoie davantage de RREQ (+1 161 [1 046 ; 1 276], p < 0,001',
           pair_checks(rq, 1161, 1046, 1276, 0) + [pv(rq['p'], '< 0,001')])
     claim('P10', 'RERR par simulation, agents moins hybride tracées, test unique',
-          'et de messages d\'erreur de route (RERR, +113 [95 ; 132], p < 0,001) que la pile hybride',
+          'et de messages d\'erreur de route (RERR, +113 [95 ; 132], p < 0,001, test unique) que la pile hybride',
           pair_checks(re_, 113, 95, 132, 0) + [pv(re_['p'], '< 0,001')])
 
     # P11, decay at GOP 9-3
@@ -291,8 +291,8 @@ def main():
               [(100 * trace('hybrid', 'access', 999, 'a%d' % round2.STANDARD_ACTION) / trace('hybrid', 'access', 999, 'decisions'), '=', 85.5, 1)])
         # an action explored with probability 0.1 falls on each of the four counts alike
         claim('P14', 'détection de rupture : part d\'un seul échec (%) ; décisions ; part que l\'exploration donne à chaque nombre (%)',
-              'L\'agent choisit trois échecs dans 60,7 % de ses 550 décisions, cinq dans 34,2 % et un seul dans 2,4 %, contre les 2,5 % que '
-              'l\'exploration (\\varepsilon = 0,1 sur quatre nombres d\'échecs) attribue à chacun d\'eux',
+              'L\'agent choisit trois échecs dans 60,7 % de ses 550 décisions et cinq dans 34,2 %. Il choisit un seul échec dans 2,4 % '
+              'd\'entre elles, contre les 2,5 % que l\'exploration (\\varepsilon = 0,1 sur quatre nombres d\'échecs) attribue à chacun d\'eux',
               [(100 * trace('agents', 'break', 999, 'a%d' % a) / trace('agents', 'break', 999, 'decisions'), '=', v, 1)
                for a, v in ((2, 60.7), (3, 34.2), (0, 2.4))] + [
                (trace('agents', 'break', 999, 'decisions'), '=', 550, 0), (100 * 0.1 / len(controls.COUNTS), '=', 2.5, 1),
@@ -594,7 +594,8 @@ def main():
               'L\'énergie de la radio varie d\'au plus 0,09 % entre les piles à règles, hybride et à agents, dans chacune des neuf cellules',
               [(100 * s3, '=', 0.09, 2)])
         claim('P33', 'avec la pile à accès seul : écart maximal par cellule, ses trois cellules du GOP 9-3 seules (%)',
-              'En comptant la pile à accès seul, elle varie d\'au plus 0,12 % dans une cellule du GOP 9-3',
+              'En comptant la pile à accès seul, elle varie d\'au plus 0,12 % dans chacune des trois cellules du GOP 9-3, celui du tableau '
+              '\\ref{tab:fr-couts}',
               [(100 * s4, '=', 0.12, 2), (cells4 == 3 and all(r['split'] == '9M3D' for r in OVER if r['stack'] == 'access'), '=', True, 0)])
     claim('P36', 'opérations par paquet : 20 comparaisons + 4 × 3 mises à jour + 8 tirages', 'au plus 40 opérations par paquet', [(20 + 4 * 3 + 8, '=', 40, 0)])
 

@@ -6,9 +6,12 @@ package's functions:
        stack at GOP 9-3 (round2.crossing, Holm over its four contrasts)
   S08  control 2, the four configurations learned in
        development runs, frozen, on each stack (round2.learned_csma, Holm over
-       the four configurations of each stack and reference); the four fixed
-       (BE, NB) of before the learned configurations left the text, and report --only round2 prints
-       them apart
+       the four configurations of each stack and reference); and the four
+       fixed (BE, NB) of its first version, before the learned configurations, against the learning
+       agent and against the standard's parameters on each stack (section
+       3.3): single tests, the article's convention for that series, with
+       Holm over the four settings (round2.fixed_csma) given beside against
+       the standard
   S09  control 3, the access-only stack at the three GOPs (round2.access_gops,
        Holm over the three GOPs of each comparison), the stack the rule of
        choice keeps, and its M1 loss, its images that reach the PSNR
@@ -98,16 +101,15 @@ def claims(C):
           'La quatrième configuration de cette pile passe sous l\'agent qui apprend (−2,06 dB [−2,45 ; −1,66], p < 0,001',
           [(sorted(k for k, e in es.items() if e.mean < 0 and e.holm < 0.05) == [4], '=', True, 0)])
     # the four fixed and uniform CSMA/CA settings of before the learned configurations, against the
-    # agent that learns, on each stack: single tests (sections 2.7, 3.3, 4.1, 5)
+    # agent that learns, on each stack: single tests (sections 3.3, 4.1, 5)
     fixed = {st: [stats.paired(round2.values('%s-%s-s11' % (st, s), 'psnr'), round2.values(round2.REFERENCES[st]['agent'], 'psnr'))
                   for s, *_ in round2.SETTINGS] for st in ('rules', 'hybrid')}
     for st, name, text, where in (
             ('rules', 'pile à accès seul', '−2,43 à −1,28 dB, intervalles de −2,95 à −0,76 dB, p < 0,001',
              'Dans la pile à accès seul, chacun passe sous l\'agent qui apprend (%s, tests uniques … Les écarts vont de −2,43 à −1,28 dB '
-             '(intervalles de −2,95 à −0,76 dB, p < 0,001, tests uniques … Sur la pile à accès seul, l\'écart va de −1,28 à −2,43 dB (intervalles de −2,95 à −0,76 dB, p < 0,001, tests uniques'),
+             '(intervalles de −2,95 à −0,76 dB, p < 0,001, tests uniques'),
             ('hybrid', 'pile hybride', '−2,48 à −1,26 dB, intervalles de −2,96 à −0,88 dB, p < 0,001',
-             'Il en va de même dans la pile hybride (%s … Dans la pile hybride, ils passent aussi sous l\'agent (%s, tests uniques … '
-             'Sur la pile hybride, il va de −1,26 à −2,48 dB (intervalles de −2,96 à −0,88 dB, p < 0,001')):
+             'Il en va de même dans la pile hybride (%s … Dans la pile hybride, ils passent aussi sous l\'agent (%s, tests uniques')):
         claim('S08', 'PSNR, quatre réglages CSMA/CA fixes − l\'agent qui apprend, %s, GOP 9-3, tests uniques : min., max. ; p max. ; bornes '
               'min. et max. ; réglages, simulations' % name, where.replace('%s', text),
               range_checks(fixed[st], text) + [(len(fixed[st]) == 4 and all(e.mean < 0 for e in fixed[st]), '=', True, 0)])
@@ -122,6 +124,38 @@ def claims(C):
         '−2,06 dB [−2,45 ; −1,66], p < 0,001', es[4])
     gap('S08', 'C2-learned-hybrid-k4-standard', 'PSNR, configuration k4 figée sur la pile hybride − les paramètres de la norme, '
         'Holm sur quatre', '+0,08 dB [−0,42 ; 0,57], p = 0,76', lc['hybrid', 'standard'][4])
+    # the same four settings against the standard's parameters, the rule stack
+    # and the hybrid stack without the channel-access agent (section 3.3):
+    # single tests, as against the agent, and Holm over the four settings of
+    # each stack (round2.fixed_csma) given beside
+    std = {st: {s: stats.paired(round2.values('%s-%s-s11' % (st, s), 'psnr'), round2.values(round2.REFERENCES[st]['standard'], 'psnr'))
+                for s, *_ in round2.SETTINGS} for st in ('rules', 'hybrid')}
+    corrected = {st: round2.fixed_csma(st, 'standard') for st in ('rules', 'hybrid')}
+    above = {st: [s for s, e in std[st].items() if e.mean > 0 and e.p < 0.05] for st in ('rules', 'hybrid')}
+    text = ('Face aux paramètres de la norme, l\'un de ces réglages dépasse la pile à règles dans la pile à accès seul (+0,71 dB '
+            '[0,13 ; 1,30], p = 0,018, test unique, p = 0,071 après correction sur les quatre')
+    claim('S08', 'PSNR, réglage CSMA/CA fixe (BE 3, NB 5) sur la pile à accès seul − les paramètres de la norme, GOP 9-3, test unique ; '
+          'Holm sur les quatre réglages ; le seul des quatre au-dessus avec p < 0,05', text,
+          gap_checks(std['rules']['be3nb5'], text) + [pv(corrected['rules']['be3nb5'].holm, '= 0,071'),
+                                                      (above['rules'] == ['be3nb5'], '=', True, 0)])
+    rest = [e for s, e in std['rules'].items() if s not in above['rules']]
+    text = '−0,44 à +0,50 dB, intervalles de −1,07 à +1,04 dB, p ≥ 0,064'
+    claim('S08', 'PSNR, les trois autres réglages fixes sur la pile à accès seul − les paramètres de la norme, tests uniques : min., max. ; '
+          'p min. ; bornes min. et max. ; aucun p < 0,05',
+          'Aucune différence statistiquement significative n\'a été détectée pour les trois autres (%s, tests uniques' % text,
+          range_checks(rest, text) + [(len(rest) == 3 and all(e.p >= 0.05 for e in rest), '=', True, 0)])
+    three = [std['hybrid'][s] for s in above['hybrid']]
+    text = '+0,65 à +0,88 dB, intervalles de 0,17 à 1,37 dB, p ≤ 0,011'
+    claim('S08', 'PSNR, réglages fixes sur la pile hybride − la même pile sans l\'agent d\'accès (les paramètres de la norme), les trois '
+          'au-dessus avec p < 0,05, tests uniques : min., max. ; p max. ; bornes min. et max. ; Holm sur les quatre réglages, max.',
+          'Dans la pile hybride, trois dépassent la même pile sans l\'agent (%s, tests uniques, p ≤ 0,021 après correction' % text,
+          range_checks(three, text) + [pv(max(corrected['hybrid'][s].holm for s in above['hybrid']), '≤ 0,021'),
+                                       (len(three) == 3 and all(corrected['hybrid'][s].holm < 0.05 for s in above['hybrid']), '=', True, 0)])
+    fourth = [s for s in std['hybrid'] if s not in above['hybrid']]
+    text = ('Aucune différence statistiquement significative n\'a été détectée pour le quatrième (−0,35 dB [−0,91 ; 0,22], p = 0,23, '
+            'test unique')
+    claim('S08', 'PSNR, réglage fixe (BE 2, NB 5) sur la pile hybride − la même pile sans l\'agent d\'accès, test unique : le quatrième, '
+          'p ≥ 0,05', text, gap_checks(std['hybrid']['be2nb5'], text) + [(fourth == ['be2nb5'], '=', True, 0)])
 
     # S09, control 3: the access-only stack at the three GOPs
     # the comparison the results lead with (section 3.3): the PSNR, Holm

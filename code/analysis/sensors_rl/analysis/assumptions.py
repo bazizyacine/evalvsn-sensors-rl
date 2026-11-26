@@ -134,7 +134,8 @@ def blocks():
         add(_family('E2', 'onlyA', 3, 'PSNR (dB), %s, per GOP' % c, round2.access_gops(c), GOP.get))
     # control 2: the four learned configurations frozen, one
     # family per stack and reference, once their replays are all in round2.tsv;
-    # the four fixed CSMA/CA settings it replaced left the text, and the set
+    # the four fixed CSMA/CA settings it replaced are outside the families and
+    # the plan, their tests single ones among those of E2 below
     for st in ('rules', 'hybrid'):
         for ref in ('agent', 'standard'):
             learned = round2.learned_csma(st, ref)
@@ -157,11 +158,12 @@ def blocks():
                ('M1 loss, %s alone: rules-onlyA - rules' % AGENT['A'], m1e[0]['A']),
                ('declarations, %s alone: rules-onlyA - rules' % AGENT['A'], decl[0]['A'])] + access
     # the four fixed and uniform CSMA/CA settings of the first version of the
-    # learned-configuration series, against the agent that learns on each
-    # stack: single tests, outside the plan since the second round (sections 2.7 and 3.3)
-    singles += [('PSNR, fixed CSMA/CA %s on the %s stack - %s' % (setting, st, round2.REFERENCES[st]['agent']),
-                 stats.paired(round2.values('%s-%s-s11' % (st, setting), 'psnr'), round2.values(round2.REFERENCES[st]['agent'], 'psnr')))
-                for st in ('rules', 'hybrid') for setting, *_ in round2.SETTINGS]
+    # learned-configuration series, against the agent that learns and against
+    # the standard's setting on each stack: single tests, outside the plan
+    # since the second round (section 3.3)
+    singles += [('PSNR, fixed CSMA/CA %s on the %s stack - %s' % (setting, st, round2.REFERENCES[st][ref]),
+                 stats.paired(round2.values('%s-%s-s11' % (st, setting), 'psnr'), round2.values(round2.REFERENCES[st][ref], 'psnr')))
+                for ref in ('agent', 'standard') for st in ('rules', 'hybrid') for setting, *_ in round2.SETTINGS]
     add(_single('E2', 'the single tests of E2: PSNR outside the families, the other measures', singles))
 
     # E3, the adaptation of the agents
